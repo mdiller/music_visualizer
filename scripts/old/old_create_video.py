@@ -37,6 +37,8 @@ def make_freq_vid(input_file):
 
 	print("doin spectrogram...")
 	C = librosa.cqt(x, sr=sr, fmin=fmin, n_bins=n_bins, bins_per_octave=bins_per_octave, hop_length=hop_length)
+
+
 	# C = librosa.feature.chroma_cens(y=x, sr=sr, hop_length=hop_length)
 
 	C = librosa.amplitude_to_db(numpy.abs(C), ref=.3)
