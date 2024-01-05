@@ -5,7 +5,7 @@ import librosa
 import os
 
 input_file = "songs/vocal_clip/vocal_clip.wav"
-input_file = "songs/dont_lose_sight/dont_lose_sight.mp3"
+# input_file = "songs/dont_lose_sight/dont_lose_sight.mp3"
 
 
 output_file = "src/generated/generated.js"

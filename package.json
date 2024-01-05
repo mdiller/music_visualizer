@@ -12,8 +12,7 @@
     "@motion-canvas/core": "^3.12.1",
     "@motion-canvas/ffmpeg": "^1.1.0",
     "ndarray": "^1.0.19",
-    "npyjs": "^0.6.0",
-    "read-npy-file": "^1.0.4"
+    "npyjs": "^0.6.0"
   },
   "devDependencies": {
     "@motion-canvas/ui": "^3.12.1",
