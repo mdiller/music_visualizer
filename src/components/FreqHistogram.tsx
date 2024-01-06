@@ -19,7 +19,9 @@ import {
 	Vector2,
 } from '@motion-canvas/core';
 import { COLOR_GRADIENTS } from '../generated/generated';
-import { NUMPY_DATA } from '../utils/NumpyData'
+
+// import { NUMPY_DATA } from '../utils/NumpyData'
+import { SPECTROGRAMS } from '../utils/SongData';
 
 function createPathData(data: any, index: number, width: number, height: number): string {
 	var frameLength = data.shape[1];
@@ -63,7 +65,8 @@ export class FreqHistogram extends Node {
 	private readonly path = createRef<Path>();
 
 	// TODO: make this into a "computed" method
-	private readonly data = createSignal(() => createPathData(NUMPY_DATA, this.frame(), this.size().x, this.size().y));
+	private readonly data = createSignal(() => createPathData(SPECTROGRAMS[4].data, this.frame(), this.size().x, this.size().y));
+	// private readonly data = createSignal(() => createPathData(NUMPY_DATA, this.frame(), this.size().x, this.size().y));
 
 	public constructor(props?: FreqHistogramProps) {
 		super({
@@ -76,9 +79,9 @@ export class FreqHistogram extends Node {
 			fromX: this.size().x,
 			toX: this.size().y,
 			stops: [
-				{offset: 0, color: '#00ff00'},
-				{offset: 0.5, color: '#00ff00'},
-				{offset: 1, color: '#ff0000'}
+				{offset: 0, color: '#ab08d2'},
+				{offset: 0.5, color: '#0e49be'},
+				{offset: 1, color: '#ab08d2'}
 			]
 		  });
 

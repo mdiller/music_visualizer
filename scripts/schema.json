@@ -1,0 +1,40 @@
+[
+	{
+		"title": "SpectrogramInfo",
+		"type": "object",
+		"properties": {
+			"name": {
+				"type": "string"
+			},
+			"frame_count": {
+				"type": "number"
+			},
+			"framerate": {
+				"type": "number"
+			},
+			"octaves": {
+				"type": "number"
+			},
+			"bins_per_octave": {
+				"type": "number"
+			},
+			"min_x": {
+				"type": "number"
+			},
+			"max_x": {
+				"type": "number"
+			}
+		}
+	},
+	{
+		"title": "SongInfo",
+		"properties": {
+			"spectrograms": {
+				"type": "array",
+				"items": {
+					"$ref": "#/SpectrogramInfo"
+				}
+			}
+		}
+	}
+]

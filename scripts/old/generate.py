@@ -4,6 +4,9 @@ import json
 import librosa
 import os
 
+
+# python -m spleeter separate -p spleeter:4stems -o output what_if.mp3
+
 input_file = "songs/vocal_clip/vocal_clip.wav"
 # input_file = "songs/dont_lose_sight/dont_lose_sight.mp3"
 

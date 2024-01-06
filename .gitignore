@@ -16,3 +16,8 @@ dist
 
 songs/
 _temp/
+_spleeter/
+__pycache__/
+
+
+scripts/_spleeter/

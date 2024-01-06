@@ -25,4 +25,8 @@ stuff to export here:
 	- key
 	- bpm
 	- list of the instrument names
+
+// OK NEXT 2 BIG STEPS
+// - see if we can do a toSignal() on the numpy data we get (tho make sure to support stripping whitespace)
+// - rewrite the python generator code to create the json file and have good support for creating the other stuff
 */

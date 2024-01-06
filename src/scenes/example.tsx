@@ -2,6 +2,8 @@ import {makeScene2D, Circle, Path, signal, Rect, Layout} from '@motion-canvas/2d
 import {all, createRef, createSignal, Vector2, waitFor} from '@motion-canvas/core';
 import { FreqHistogram } from '../components/FreqHistogram';
 
+import { SPECTROGRAMS } from '../utils/SongData';
+
 export default makeScene2D(function* (view) {
   const frameIndex = createSignal(0);
 
@@ -33,7 +35,7 @@ export default makeScene2D(function* (view) {
     </Rect>
   );
 
-  for (var i = 0; i < 200; i++) {
+  for (var i = 0; i < SPECTROGRAMS[0].frame_count; i++) {
     frameIndex(i)
     yield* waitFor(1 / 30)
   }

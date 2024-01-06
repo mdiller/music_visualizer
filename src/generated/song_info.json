@@ -1,0 +1,39 @@
+{
+	"spectrograms": [
+		{
+			"name": "bass",
+			"frame_count": 6244,
+			"framerate": null,
+			"octaves": 9,
+			"bins_per_octave": 48
+		},
+		{
+			"name": "drums",
+			"frame_count": 6244,
+			"framerate": null,
+			"octaves": 9,
+			"bins_per_octave": 48
+		},
+		{
+			"name": "other",
+			"frame_count": 6244,
+			"framerate": null,
+			"octaves": 9,
+			"bins_per_octave": 48
+		},
+		{
+			"name": "vocals",
+			"frame_count": 6244,
+			"framerate": null,
+			"octaves": 9,
+			"bins_per_octave": 48
+		},
+		{
+			"name": "song",
+			"frame_count": 6244,
+			"framerate": null,
+			"octaves": 9,
+			"bins_per_octave": 48
+		}
+	]
+}
