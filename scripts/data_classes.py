@@ -40,8 +40,9 @@ class SpectrogramInfo():
 			return SpectrogramInfo.fromJson(json.loads(f.read()))
 
 	def writeFile(self, filename: str):
+		text = json.dumps(self.toJson(), indent="\t")
 		with open(filename, "w+") as f:
-			f.write(json.dumps(self.toJson(), indent="\t"))
+			f.write(text)
 
 class SongInfo():
 	def __init__(self, spectrograms = None):
@@ -64,5 +65,6 @@ class SongInfo():
 			return SongInfo.fromJson(json.loads(f.read()))
 
 	def writeFile(self, filename: str):
+		text = json.dumps(self.toJson(), indent="\t")
 		with open(filename, "w+") as f:
-			f.write(json.dumps(self.toJson(), indent="\t"))
+			f.write(text)

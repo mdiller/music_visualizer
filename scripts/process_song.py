@@ -25,6 +25,7 @@ SPLEETER_DIR = os.path.join(ROOT_DIR, "scripts/_spleeter")
 SONG_DIR = os.path.join(ROOT_DIR, "songs", song_name)
 song_mp3_filename = os.path.join(SONG_DIR, "song.mp3")
 song_info_file = os.path.join(SONG_DIR, "song_info.json")
+song_info_file2 = os.path.join(ROOT_DIR, "src/generated/song_info.json")
 
 # STEP 1: SPLIT SONG INTO PARTS IF NOT ALREADY DONE
 
@@ -151,7 +152,7 @@ for stem in stems:
 # TODO: regenerate this data only if spectrogram config changes (will have to save raw_spectrogram_config somewhere) (also have an option to only process 1 stem?)
 final_spectrogram_config = OrderedDict([
 	("amplitude_ref", 0.6),
-	("decay_factor", 0.70),
+	("decay_factor", 0.25), # higher number decays slower
 	("remove_negatives", True),
 	("fill_value_range", True)
 ])
@@ -183,7 +184,7 @@ def process_spectrogram(stem: SongStem):
 
 	
 	# Convert to boolean: True for non-zero, False for zero
-	non_zero = data > 0
+	non_zero = data > 0.25
 	# Find the first non-zero index in each row for lower bounds
 	lower_bounds = np.argmax(non_zero, axis=1)
 	# Reverse each row, find the first non-zero index, and adjust the position for the upper bounds
@@ -193,8 +194,9 @@ def process_spectrogram(stem: SongStem):
 
 	for info in spectrogram_infos:
 		if info.name == stem.name:
-			info.min_x = lower_bounds
-			info.max_x = upper_bounds
+			info.min_x = int(np.min(lower_bounds))
+			info.max_x = int(np.max(upper_bounds))
+			info.framerate = 30.0
 			info.writeFile(stem.spectrogram_info_file)
 
 	np.save(stem.spectrogram_file, data)
@@ -209,8 +211,11 @@ print("] Processing spectrograms...")
 # - ideally eventually we have some sort of gui for editing this config
 # - then a button on the gui to regenerate, and a terminal showing the regeneration process
 # update: ok we made the class generator now just gotta use it
-Parallel(n_jobs=len(stems))(delayed(process_spectrogram)(stem) for stem in stems if True)  # replace with your condition		
 
+# Parallel(n_jobs=len(stems))(delayed(process_spectrogram)(stem) for stem in stems if True)  # replace with your condition		
+
+for stem in stems:
+	process_spectrogram(stem)
 
 
 song_info = SongInfo()
@@ -219,3 +224,12 @@ song_info.spectrograms = spectrogram_infos
 
 song_info.writeFile(song_info_file)
 
+song_info.writeFile(song_info_file2)
+
+
+# TODO: really gotta make a version of our spectrogram where notes that are held are super emphasized, or even a version that ONLY shows notes that are held
+# TODO: also should maybe add a filter that only cares about differences/up/downs that last more than x miliseconds, which will let us pay attention more to just notes and less to noise?
+
+# TODO: have an AVERAGE_FREQUENCY line that just gets the average frequency currently playing, weighing the ones higher that are playing with more volume, and as a companion to it, a thing that can tell us whether or not we're currently making sound
+
+# TODO: next big step prolly after gradient is to make the py processing myuch more efficeint!

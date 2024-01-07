@@ -3,37 +3,47 @@
 		{
 			"name": "bass",
 			"frame_count": 6244,
-			"framerate": null,
+			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48
+			"bins_per_octave": 48,
+			"min_x": 0,
+			"max_x": 213
 		},
 		{
 			"name": "drums",
 			"frame_count": 6244,
-			"framerate": null,
+			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48
+			"bins_per_octave": 48,
+			"min_x": 0,
+			"max_x": 280
 		},
 		{
 			"name": "other",
 			"frame_count": 6244,
-			"framerate": null,
+			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48
+			"bins_per_octave": 48,
+			"min_x": 0,
+			"max_x": 384
 		},
 		{
 			"name": "vocals",
 			"frame_count": 6244,
-			"framerate": null,
+			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48
+			"bins_per_octave": 48,
+			"min_x": 0,
+			"max_x": 431
 		},
 		{
 			"name": "song",
 			"frame_count": 6244,
-			"framerate": null,
+			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48
+			"bins_per_octave": 48,
+			"min_x": 0,
+			"max_x": 387
 		}
 	]
 }

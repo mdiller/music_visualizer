@@ -76,8 +76,9 @@ for schema in schemas:
 
 
 	pylines.append("\tdef writeFile(self, filename: str):")
+	pylines.append("\t\ttext = json.dumps(self.toJson(), indent=\"\\t\")")
 	pylines.append("\t\twith open(filename, \"w+\") as f:")
-	pylines.append(f"\t\t\tf.write(json.dumps(self.toJson(), indent=\"\\t\"))")
+	pylines.append(f"\t\t\tf.write(text)")
 
 	
 	pylines.append("")
