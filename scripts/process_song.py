@@ -20,7 +20,7 @@ from audio_processing import SongProcessor
 
 overwrite_stems = False
 stems_model = "4stems" 
-song_name = "dont_lose_sight"
+song_name = "what_if"
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 SPLEETER_DIR = os.path.join(ROOT_DIR, "scripts/_spleeter")

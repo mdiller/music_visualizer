@@ -34,7 +34,7 @@ export class CoolGradient {
 
 		// F Major
 		let scaleSteps: number[] = majorScaleSteps;
-		let keyRootOffset: number = 8; // how many half-steps up from A is the root of the key (F => 8)
+		let keyRootOffset: number = 5; // how many half-steps up from A is the root of the key (F => 8) (D => 5)
 
 		let stepsPerOctave: number = scaleSteps.length; // should be 12
 

@@ -60,7 +60,7 @@ class SongProcessor():
 		self,
 		midi_min: int = 9,
 		framerate: int = 30,
-		bins_per_octave: int = 30,
+		bins_per_octave: int = 48,
 		octaves: int = 9
 	) -> np.ndarray:
 		data, sr = librosa.load(self.filename)
@@ -127,19 +127,24 @@ class SongProcessor():
 	
 	def STEP_final(
 		self,
-		STEP_decay_and_filter: StepOutput
+		STEP_decay_and_filter: StepOutput,
+		edge_cutoff: int = 0.1,
 	) -> np.ndarray:
 		final_file = STEP_decay_and_filter
-		data = final_file.read()
+		data = final_file.read() # test1
 
-		# Convert to boolean: True for non-zero, False for zero
-		non_zero = data > 0.3
-		# Find the first non-zero index in each row for lower bounds
-		lower_bounds = np.argmax(non_zero, axis=1)
-		# Reverse each row, find the first non-zero index, and adjust the position for the upper bounds
-		upper_bounds = data.shape[1] - np.argmax(non_zero[:, ::-1], axis=1) - 1
-		# Adjust upper bounds in case the entire row is zeros
-		upper_bounds = np.where(np.any(non_zero, axis=1), upper_bounds, -1)
+		lower_bounds = []
+		upper_bounds = []
+		for frame in data:
+			non_zero_indices = np.where(frame > edge_cutoff)[0]
+			if non_zero_indices.size > 0:
+				lowest_x = np.min(non_zero_indices)
+				highest_x = np.max(non_zero_indices)
+				lower_bounds.append(lowest_x)
+				upper_bounds.append(highest_x)
+			# else:
+			# 	lower_bounds.append(0)
+			# 	upper_bounds.append(len(frame))
 
 		self.info.min_x = int(np.min(lower_bounds))
 		self.info.max_x = int(np.max(upper_bounds))
