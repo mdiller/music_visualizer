@@ -2,7 +2,7 @@ import json
 from collections import OrderedDict
 
 class SpectrogramInfo():
-	def __init__(self, name = None, frame_count = None, framerate = None, octaves = None, bins_per_octave = None, min_x = None, max_x = None):
+	def __init__(self, name = None, frame_count = None, framerate = None, octaves = None, bins_per_octave = None, min_x = None, max_x = None, file_spectrogram = None):
 		self.name = name
 		self.frame_count = frame_count
 		self.framerate = framerate
@@ -10,6 +10,7 @@ class SpectrogramInfo():
 		self.bins_per_octave = bins_per_octave
 		self.min_x = min_x
 		self.max_x = max_x
+		self.file_spectrogram = file_spectrogram
 
 	def toJson(self):
 		return OrderedDict([
@@ -20,6 +21,7 @@ class SpectrogramInfo():
 			("bins_per_octave", self.bins_per_octave),
 			("min_x", self.min_x),
 			("max_x", self.max_x),
+			("file_spectrogram", self.file_spectrogram),
 		])
 
 	@classmethod
@@ -32,6 +34,7 @@ class SpectrogramInfo():
 		self.bins_per_octave = json.get("bins_per_octave")
 		self.min_x = json.get("min_x")
 		self.max_x = json.get("max_x")
+		self.file_spectrogram = json.get("file_spectrogram")
 		return self
 
 	@classmethod

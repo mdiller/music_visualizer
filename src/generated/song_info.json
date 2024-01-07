@@ -5,45 +5,50 @@
 			"frame_count": 6244,
 			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48,
+			"bins_per_octave": 30,
 			"min_x": 0,
-			"max_x": 213
+			"max_x": 133,
+			"file_spectrogram": "songs\\dont_lose_sight\\data\\bass\\STEP_decay_and_filter_2fdb258cfd.npy"
 		},
 		{
 			"name": "drums",
 			"frame_count": 6244,
 			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48,
+			"bins_per_octave": 30,
 			"min_x": 0,
-			"max_x": 280
+			"max_x": 160,
+			"file_spectrogram": "songs\\dont_lose_sight\\data\\drums\\STEP_decay_and_filter_2214dd072c.npy"
 		},
 		{
 			"name": "other",
 			"frame_count": 6244,
 			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48,
+			"bins_per_octave": 30,
 			"min_x": 0,
-			"max_x": 384
+			"max_x": 219,
+			"file_spectrogram": "songs\\dont_lose_sight\\data\\other\\STEP_decay_and_filter_f3990c1d10.npy"
 		},
 		{
 			"name": "vocals",
 			"frame_count": 6244,
 			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48,
+			"bins_per_octave": 30,
 			"min_x": 0,
-			"max_x": 431
+			"max_x": 258,
+			"file_spectrogram": "songs\\dont_lose_sight\\data\\vocals\\STEP_decay_and_filter_59add34113.npy"
 		},
 		{
 			"name": "song",
 			"frame_count": 6244,
 			"framerate": 30.0,
 			"octaves": 9,
-			"bins_per_octave": 48,
+			"bins_per_octave": 30,
 			"min_x": 0,
-			"max_x": 387
+			"max_x": 240,
+			"file_spectrogram": "songs\\dont_lose_sight\\data\\song\\STEP_decay_and_filter_fedbb88196.npy"
 		}
 	]
 }

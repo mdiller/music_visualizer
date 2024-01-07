@@ -19,5 +19,6 @@ _temp/
 _spleeter/
 __pycache__/
 
+src/generated
 
 scripts/_spleeter/

@@ -23,6 +23,9 @@
 			},
 			"max_x": {
 				"type": "number"
+			},
+			"file_spectrogram": {
+				"type": "string"
 			}
 		}
 	},
