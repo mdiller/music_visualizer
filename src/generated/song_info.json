@@ -1,5 +1,5 @@
 {
-	"spectrograms": [
+	"stems": [
 		{
 			"name": "bass",
 			"frame_count": 7348,
@@ -8,7 +8,10 @@
 			"bins_per_octave": 48,
 			"min_x": 46,
 			"max_x": 251,
-			"file_spectrogram": "songs\\what_if\\data\\bass\\STEP_decay_and_filter_d7fcaa55bc.npy"
+			"DATA_spectrogram": "songs\\what_if\\data\\bass\\STEP_decay_and_filter_6cc6443573.npy",
+			"DATA_volume": "songs\\what_if\\data\\bass\\STEP_volume_6b90fd8978.npy",
+			"DATA_volume_velocity": "songs\\what_if\\data\\bass\\STEP_volume_velocity_b107746e4d.npy",
+			"DATA_volume_rolling_average": "songs\\what_if\\data\\bass\\STEP_volume_rolling_average_e8f24551f0.npy"
 		},
 		{
 			"name": "drums",
@@ -18,7 +21,10 @@
 			"bins_per_octave": 48,
 			"min_x": 26,
 			"max_x": 304,
-			"file_spectrogram": "songs\\what_if\\data\\drums\\STEP_decay_and_filter_3067b7562c.npy"
+			"DATA_spectrogram": "songs\\what_if\\data\\drums\\STEP_decay_and_filter_a1ddc009eb.npy",
+			"DATA_volume": "songs\\what_if\\data\\drums\\STEP_volume_d51cf83055.npy",
+			"DATA_volume_velocity": "songs\\what_if\\data\\drums\\STEP_volume_velocity_6a4fee86c9.npy",
+			"DATA_volume_rolling_average": "songs\\what_if\\data\\drums\\STEP_volume_rolling_average_03e020ef8b.npy"
 		},
 		{
 			"name": "other",
@@ -28,7 +34,10 @@
 			"bins_per_octave": 48,
 			"min_x": 118,
 			"max_x": 385,
-			"file_spectrogram": "songs\\what_if\\data\\other\\STEP_decay_and_filter_468f30a53f.npy"
+			"DATA_spectrogram": "songs\\what_if\\data\\other\\STEP_decay_and_filter_163864788a.npy",
+			"DATA_volume": "songs\\what_if\\data\\other\\STEP_volume_6cca0a8d03.npy",
+			"DATA_volume_velocity": "songs\\what_if\\data\\other\\STEP_volume_velocity_a038febeb2.npy",
+			"DATA_volume_rolling_average": "songs\\what_if\\data\\other\\STEP_volume_rolling_average_084bba6ae8.npy"
 		},
 		{
 			"name": "vocals",
@@ -38,7 +47,10 @@
 			"bins_per_octave": 48,
 			"min_x": 134,
 			"max_x": 402,
-			"file_spectrogram": "songs\\what_if\\data\\vocals\\STEP_decay_and_filter_551f299e33.npy"
+			"DATA_spectrogram": "songs\\what_if\\data\\vocals\\STEP_decay_and_filter_76dc47f7cb.npy",
+			"DATA_volume": "songs\\what_if\\data\\vocals\\STEP_volume_faee499c71.npy",
+			"DATA_volume_velocity": "songs\\what_if\\data\\vocals\\STEP_volume_velocity_3bd7941af1.npy",
+			"DATA_volume_rolling_average": "songs\\what_if\\data\\vocals\\STEP_volume_rolling_average_a23f59bce1.npy"
 		},
 		{
 			"name": "song",
@@ -48,7 +60,10 @@
 			"bins_per_octave": 48,
 			"min_x": 25,
 			"max_x": 401,
-			"file_spectrogram": "songs\\what_if\\data\\song\\STEP_decay_and_filter_983438f3e5.npy"
+			"DATA_spectrogram": "songs\\what_if\\data\\song\\STEP_decay_and_filter_f956d0881e.npy",
+			"DATA_volume": "songs\\what_if\\data\\song\\STEP_volume_2cb45ce2a3.npy",
+			"DATA_volume_velocity": "songs\\what_if\\data\\song\\STEP_volume_velocity_181c5ec79e.npy",
+			"DATA_volume_rolling_average": "songs\\what_if\\data\\song\\STEP_volume_rolling_average_58cabe8871.npy"
 		}
 	]
 }

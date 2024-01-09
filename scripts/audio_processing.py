@@ -5,8 +5,9 @@ from typing import get_type_hints
 import hashlib
 import os
 from collections import OrderedDict
+import json
 
-from data_classes import SpectrogramInfo
+from data_classes import StemInfo
 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
@@ -22,8 +23,16 @@ class StepOutput():
 		self.direct_print = False
 	
 	@property
+	def filepath_npy(self):
+		return self.filepath + ".npy"
+
+	@property
+	def filepath_json(self):
+		return self.filepath + ".json"
+	
+	@property
 	def exists(self):
-		return os.path.exists(self.filepath)
+		return os.path.exists(self.filepath_json)
 
 	@property
 	def hash(self):
@@ -31,21 +40,30 @@ class StepOutput():
 			self._hash = hash_string(self.filepath)
 		return self._hash
 
-	def save(self, data: np.ndarray):
+	def save(self, data: np.ndarray, info: OrderedDict):
+		if data is None:
+			data = np.empty([1, 1])
 		self.data = data
-		np.save(self.filepath, self.data)
+		np.save(self.filepath_npy, self.data)
+		text = json.dumps(info)
+		with open(self.filepath_json, "w+") as f:
+			f.write(text)
 
 	def read(self) -> np.ndarray:
 		if self.data is None:
-			self.data = np.load(self.filepath)
+			self.data = np.load(self.filepath_npy)
 		return self.data
+	
+	def read_info(self) -> OrderedDict:
+		with open(self.filepath_json, "r") as f:
+			return json.loads(f.read(), object_pairs_hook=OrderedDict)
 	
 	def __repr__(self):
 		return self.hash
 
 
 class SongProcessor():
-	info: SpectrogramInfo
+	info: StemInfo
 	def __init__(self, name, filename, out_dir):
 		self.name = name
 		self.filename = filename
@@ -55,15 +73,77 @@ class SongProcessor():
 		self.print_lines = []
 		if not os.path.exists(self.out_dir):
 			os.makedirs(self.out_dir)
+		
+	def STEP_extract_audio(
+		self,
+	):
+		data, sr = librosa.load(self.filename)
+		return data
+	
+	def STEP_volume(
+		self,
+		STEP_extract_audio: StepOutput,
+		volume_framerate: int = 1
+	):
+		data = STEP_extract_audio.read()
+		sr = 22050 # TODO: fix/update so that we can get this dynamically. librosa.get_samplerate gets wrong value. 
 
+		# Calculate frame length and hop length
+		frame_length = sr // volume_framerate
+		hop_length = frame_length // 2  # 50% overlap
+
+		# Compute short-term Fourier transform
+		stft = librosa.stft(data, n_fft=frame_length, hop_length=hop_length)
+
+		# Calculate power spectrum
+		powerSpectrum = np.abs(stft)**2
+
+		# Compute RMS energy for each frame
+		rms = librosa.feature.rms(S=powerSpectrum, frame_length=frame_length, hop_length=hop_length)
+
+		# Flatten the array to get a 1D array representing volume over time
+		data = rms.flatten()
+
+		data = np.maximum(data, 0)
+		data /= np.max(data)
+
+		return data, "DATA_volume"
+	
+	def STEP_volume_velocity(
+		self,
+		STEP_volume: StepOutput
+	):
+		data = STEP_volume.read()
+
+		modifier = 1
+		data = np.diff(data) / modifier
+
+		return data, "DATA_volume_velocity"
+	
+	def STEP_volume_rolling_average(
+		self,
+		STEP_volume: StepOutput
+	):
+		data = STEP_volume.read()
+
+		window_size = 3
+
+		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
+		data /= np.max(data)
+
+		return data, "DATA_volume_rolling_average"
+
+	
 	def STEP_raw_spectrogram(
 		self,
+		STEP_extract_audio: StepOutput,
 		midi_min: int = 9,
 		framerate: int = 30,
 		bins_per_octave: int = 48,
 		octaves: int = 9
 	) -> np.ndarray:
-		data, sr = librosa.load(self.filename)
+		data = STEP_extract_audio.read()
+		sr = 22050 # TODO: fix/update so that we can get this dynamically. librosa.get_samplerate gets wrong value. 
 		fmin = librosa.midi_to_hz(midi_min)
 
 		n_bins = octaves * bins_per_octave
@@ -122,8 +202,7 @@ class SongProcessor():
 		if fill_value_range:
 			data /= np.max(data)
 
-		return data
-		# WRITE SOME MORE INFO GATHERING HERE FOR LOWER BOUNDS ETC, OR JUST HAVE THAT ON THE SIDE
+		return data, "DATA_spectrogram"
 	
 	def STEP_final(
 		self,
@@ -148,9 +227,6 @@ class SongProcessor():
 
 		self.info.min_x = int(np.min(lower_bounds))
 		self.info.max_x = int(np.max(upper_bounds))
-		self.info.file_spectrogram = os.path.relpath(os.path.abspath(final_file.filepath), ROOT_DIR)
-
-		return data
 
 	def print(self, text):
 		self.print_lines.append(text)
@@ -160,11 +236,7 @@ class SongProcessor():
 	def run(self, direct_print = False):
 		self.direct_print = direct_print
 		run_all = False
-		if os.path.exists(self.info_file):
-			self.info = SpectrogramInfo.fromFile(self.info_file)
-		else:
-			self.info = SpectrogramInfo()
-			run_all = True
+		final_info_json = OrderedDict({})
 		
 		if run_all:
 			self.print("Running all...")
@@ -205,16 +277,30 @@ class SongProcessor():
 				input_str = "_".join(map(lambda arg: str(arg), arg_values.items()))
 				input_str = f"[{hash_string(inspect.getsource(func))}]: {input_str}"
 				input_hash = hash_string(input_str)
-				filename = f"{func_name}_{input_hash}.npy"
+				filename = f"{func_name}_{input_hash}"
 				filename = os.path.join(self.out_dir, filename)
 				step_output = StepOutput(filename)
 
 				if (not step_output.exists) or run_all:
 					self.print(f"Running: {func_name}{input_str}")
+					self.info = StemInfo()
 					result = func(**{k: v for k, v in arg_values.items() if v is not inspect.Parameter.empty})
-					step_output.save(result)
+					info_json = self.info.toJson()
+					
+					if isinstance(result, tuple):
+						result, info_key = result
+						info_json[info_key] = os.path.relpath(os.path.abspath(step_output.filepath_npy), ROOT_DIR)
+
+					step_output.save(result, info_json)
 				else:
 					self.print(f"Verified: {func_name}.{input_hash}")
+					info_json = step_output.read_info()
+				
+				# apply our info changes if there were any
+				for key in info_json:
+					if info_json.get(key) is not None:
+						final_info_json[key] = info_json[key]
+
 				step_outputs[func_name] = step_output
 				
 				del unresolved_steps[func_name]
@@ -224,7 +310,8 @@ class SongProcessor():
 			self.print(f"ERROR: UNRESOLVED FUNCS AFTER RUNNING")
 			raise Exception("ahhhh unresolved funcs")
 		
-		self.info.writeFile(self.info_file)
+		final_info = StemInfo.fromJson(final_info_json)
+		final_info.writeFile(self.info_file)
 
 		if not direct_print:
 			print(self.name)

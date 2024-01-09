@@ -1,5 +1,5 @@
 import { Gradient } from "@motion-canvas/2d";
-import { SpectrogramInfo } from "./SpectrogramInfo";
+import { StemInfo } from "../generated/DataClasses";
 
 
 interface ColorStep {
@@ -82,7 +82,7 @@ export class CoolGradient {
 		return new CoolGradient(colors, true);
 	}
 
-	toGradient(width: number, spectrogram: SpectrogramInfo): Gradient {
+	toGradient(width: number, stem_info: StemInfo): Gradient {
 		if (!this.isOctave) {
 			return new Gradient({
 				type: 'linear',
@@ -91,13 +91,13 @@ export class CoolGradient {
 				stops: this.stops
 			});
 		}
-		var total_bins = spectrogram.octaves * spectrogram.bins_per_octave;
+		var total_bins = stem_info.octaves * stem_info.bins_per_octave;
 
-		var octave_start = spectrogram.min_x / spectrogram.bins_per_octave;
-		var octave_end = spectrogram.octaves - ((total_bins - spectrogram.max_x) / spectrogram.bins_per_octave);
+		var octave_start = stem_info.min_x / stem_info.bins_per_octave;
+		var octave_end = stem_info.octaves - ((total_bins - stem_info.max_x) / stem_info.bins_per_octave);
 
 		var stops: ColorStep[] = [];
-		for (var i = 0; i < spectrogram.octaves; i++) {
+		for (var i = 0; i < stem_info.octaves; i++) {
 			this.stops.forEach(stop => {
 				var octave_offset = i + stop.offset;
 				if (octave_offset >= octave_start && octave_offset <= octave_end) {
@@ -131,4 +131,65 @@ export class CoolGradient {
 			stops: stops
 		});
 	}
+	
+	getColorAt(percent: number): string {
+        // Ensure the input is between 0 and 1
+        percent = Math.max(0, Math.min(1, percent));
+
+        // Handle edge cases
+        if (this.stops.length === 0) {
+            throw new Error("Gradient has no color stops");
+        }
+        if (this.stops.length === 1 || percent <= this.stops[0].offset) {
+            return this.stops[0].color;
+        }
+        if (percent >= this.stops[this.stops.length - 1].offset) {
+            return this.stops[this.stops.length - 1].color;
+        }
+
+        // Find the two stops between which the percentage falls
+        let startStop = this.stops[0];
+        let endStop = this.stops[this.stops.length - 1];
+        for (let i = 0; i < this.stops.length - 1; i++) {
+            if (percent >= this.stops[i].offset && percent <= this.stops[i + 1].offset) {
+                startStop = this.stops[i];
+                endStop = this.stops[i + 1];
+                break;
+            }
+        }
+
+        // Calculate the relative position of the percentage between the two stops
+        const range = endStop.offset - startStop.offset;
+        const localPercent = (percent - startStop.offset) / range;
+
+        // Interpolate the color
+        return this.interpolateColor(startStop.color, endStop.color, localPercent);
+    }
+
+    private interpolateColor(color1: string, color2: string, percent: number): string {
+        // Convert hex colors to RGB
+        const [r1, g1, b1] = this.hexToRgb(color1);
+        const [r2, g2, b2] = this.hexToRgb(color2);
+
+        // Calculate the interpolated color
+        const r = Math.round(r1 + (r2 - r1) * percent);
+        const g = Math.round(g1 + (g2 - g1) * percent);
+        const b = Math.round(b1 + (b2 - b1) * percent);
+
+        // Convert back to hex and return
+        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    }
+
+    private hexToRgb(hex: string): [number, number, number] {
+        // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+            parseInt(result[1], 16),
+            parseInt(result[2], 16),
+            parseInt(result[3], 16)
+        ] : [0, 0, 0];
+    }
 }

@@ -1,6 +1,6 @@
 [
 	{
-		"title": "SpectrogramInfo",
+		"title": "StemInfo",
 		"type": "object",
 		"properties": {
 			"name": {
@@ -24,18 +24,27 @@
 			"max_x": {
 				"type": "number"
 			},
-			"file_spectrogram": {
-				"type": "string"
+			"DATA_spectrogram": {
+				"type": "numpydata"
+			},
+			"DATA_volume": {
+				"type": "numpydata"
+			},
+			"DATA_volume_velocity": {
+				"type": "numpydata"
+			},
+			"DATA_volume_rolling_average": {
+				"type": "numpydata"
 			}
 		}
 	},
 	{
 		"title": "SongInfo",
 		"properties": {
-			"spectrograms": {
+			"stems": {
 				"type": "array",
 				"items": {
-					"$ref": "#/SpectrogramInfo"
+					"$ref": "#/StemInfo"
 				}
 			}
 		}

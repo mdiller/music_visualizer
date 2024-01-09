@@ -1,26 +1,21 @@
 import npyjs from 'npyjs';
 import ndarray from 'ndarray';
 import fs from 'fs';
-import SONG_INFO from '../generated/song_info.json'
-import { SpectrogramInfo } from "../utils/SpectrogramInfo"
+import SONG_INFO_JSON from '../generated/song_info.json'
+import { SongInfo } from '../generated/DataClasses'
 
 console.log("hello!")
 
 console.time("SongData load");
 
-const n = new npyjs();
-var spectrograms = [];
-for (var i = 0; i < SONG_INFO.spectrograms.length; i++) {
-	var spectrogram = SONG_INFO.spectrograms[i];
-	var response = await n.load(spectrogram.file_spectrogram);
-	var data = ndarray(response.data, response.shape);
-	var info = Object.assign({}, spectrogram );
-	info.data = data;
-	spectrograms.push(new SpectrogramInfo(info));
+var song_info = new SongInfo(SONG_INFO_JSON);
+
+for (var i = 0; i < song_info.stems.length; i++) {
+	await song_info.stems[i].load();
 }
 
 console.timeEnd("SongData load");
 
 // View2dfloat32
 
-export const SPECTROGRAMS = spectrograms;
+export const SONG_INFO = song_info;

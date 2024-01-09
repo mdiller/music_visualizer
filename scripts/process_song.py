@@ -6,8 +6,12 @@ import numpy as np
 from collections import OrderedDict
 import time
 from joblib import Parallel, delayed
-from data_classes import *
 import json
+
+import schema
+schema.regenerate_schema() # only regenerates if there are changes
+
+from data_classes import *
 from audio_processing import SongProcessor
 
 # TODO: implement a script to download the song and place it in the folder as full_song.mp3
@@ -92,13 +96,13 @@ for stem in stems:
 
 stem_infos = []
 for stem in stems:
-	stem_infos.append(SpectrogramInfo.fromFile(stem.processor.info_file))
+	stem_infos.append(StemInfo.fromFile(stem.processor.info_file))
 
 print("")
 
 song_info = SongInfo()
 
-song_info.spectrograms = stem_infos
+song_info.stems = stem_infos
 
 song_info.writeFile(song_info_file)
 song_info.writeFile(song_info_file2)
