@@ -20,9 +20,10 @@ import {
 } from '@motion-canvas/core';
 import { CoolGradient } from '../utils/CoolGradient';
 
-import { StemInfo } from '../generated/DataClasses';
+import { NumpyData, StemInfo } from '../generated/DataClasses';
 
-function createPathData(data: any, percent_through: number, width: number, height: number): string {
+function createPathData(data_info: NumpyData, percent_through: number, width: number, height: number): string {
+	var data = data_info.data;
 	var dataLength = data.shape[0];
 	// console.log(data.get(2))
 	var xMultiplier = width;
@@ -50,7 +51,7 @@ function createPathData(data: any, percent_through: number, width: number, heigh
 
 export interface SimpleLineProps extends NodeProps {
 	percent_through: SignalValue<number>;
-	line_data: SignalValue<any>;
+	line_data: SignalValue<NumpyData>;
 	gradient?: SignalValue<CoolGradient>;
 	size: SignalValue<Vector2>;
 }
@@ -60,7 +61,7 @@ export class SimpleLine extends Node {
 	public declare readonly percent_through: SimpleSignal<number, this>;
 
 	@signal()
-	public declare readonly line_data: SimpleSignal<any, this>;
+	public declare readonly line_data: SimpleSignal<NumpyData, this>;
 
 	@initial(CoolGradient.fromColors([ "#ab08d2", "#ab08d2" ]))
 	@signal()

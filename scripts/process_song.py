@@ -31,7 +31,9 @@ SPLEETER_DIR = os.path.join(ROOT_DIR, "scripts/_spleeter")
 SONG_DIR = os.path.join(ROOT_DIR, "songs", song_name)
 song_mp3_filename = os.path.join(SONG_DIR, "song.mp3")
 song_info_file = os.path.join(SONG_DIR, "song_info.json")
-song_info_file2 = os.path.join(ROOT_DIR, "src/generated/song_info.json")
+GENERATED_DIR = os.path.join(ROOT_DIR, "src/generated/")
+song_info_file2 = os.path.join(GENERATED_DIR, "song_info.json")
+mp3_link_stub_file = os.path.join(GENERATED_DIR, "song_mp3.js")
 
 
 # STEP 1: SPLIT SONG INTO PARTS IF NOT ALREADY DONE
@@ -86,13 +88,13 @@ stems.append(SongStem(FULL_SONG_STEMNAME))
 
 print("] Processing audio data...")
 
-for stem in stems:
-	print(f"==> {stem.name}:")
-	stem.processor.run(True)
+# for stem in stems:
+# 	print(f"==> {stem.name}:")
+# 	stem.processor.run(True)
 
-# def process_stem(stem: SongStem):
-# 	stem.processor.run()
-# Parallel(n_jobs=len(stems))(delayed(process_stem)(stem) for stem in stems)
+def process_stem(stem: SongStem):
+	stem.processor.run()
+Parallel(n_jobs=len(stems))(delayed(process_stem)(stem) for stem in stems)
 
 stem_infos = []
 for stem in stems:
@@ -106,6 +108,9 @@ song_info.stems = stem_infos
 
 song_info.writeFile(song_info_file)
 song_info.writeFile(song_info_file2)
+
+with open(mp3_link_stub_file, "w+") as f:
+	f.write(f"import audio from '../../songs/{song_name}/song.mp3'\nexport const MP3_FILE = audio;")
 
 print("done!")
 

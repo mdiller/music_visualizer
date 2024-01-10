@@ -2,9 +2,9 @@ import {makeProject} from '@motion-canvas/core';
 
 import example from './scenes/example?scene';
 
-import audio from '../songs/what_if/song.mp3'
+import { SONG_AUDIO } from './utils/SongLoader';
 
 export default makeProject({
   scenes: [example],
-  audio: audio
+  audio: SONG_AUDIO
 });

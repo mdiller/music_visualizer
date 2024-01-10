@@ -6,6 +6,9 @@
 			"name": {
 				"type": "string"
 			},
+			"samplerate": {
+				"type": "number"
+			},
 			"frame_count": {
 				"type": "number"
 			},
@@ -24,17 +27,46 @@
 			"max_x": {
 				"type": "number"
 			},
+			"bpm": {
+				"type": "number"
+			},
+			"bpm_offset": {
+				"type": "number"
+			},
 			"DATA_spectrogram": {
-				"type": "numpydata"
+				"type": "#/NumpyData"
 			},
 			"DATA_volume": {
-				"type": "numpydata"
+				"type": "#/NumpyData"
 			},
 			"DATA_volume_velocity": {
-				"type": "numpydata"
+				"type": "#/NumpyData"
 			},
 			"DATA_volume_rolling_average": {
-				"type": "numpydata"
+				"type": "#/NumpyData"
+			},
+			"DATA_spectrogram_held_notes": {
+				"type": "#/NumpyData"
+			},
+			"DATA_spectrogram_decayed": {
+				"type": "#/NumpyData"
+			},
+			"DATA_volume_in_time": {
+				"type": "#/NumpyData"
+			}
+		}
+	},
+	{
+		"title": "NumpyData",
+		"properties": {
+			"filename": {
+				"type": "string"
+			},
+			"framerate": {
+				"type": "number"
+			},
+			"offset": {
+				"type": "number"
 			}
 		}
 	},
@@ -44,7 +76,7 @@
 			"stems": {
 				"type": "array",
 				"items": {
-					"$ref": "#/StemInfo"
+					"type": "#/StemInfo"
 				}
 			}
 		}

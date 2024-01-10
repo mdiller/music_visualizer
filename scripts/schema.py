@@ -66,13 +66,14 @@ def regenerate_schema():
 		@property
 		def typescript_type(self):
 			if self.type == "array":
-				if "$ref" in self["items"]:
-					refname = self["items"]["$ref"].replace(REF_START, "")
+				element_type = self["items"]["type"]
+				if REF_START in element_type:
+					refname = element_type.replace(REF_START, "")
 					return f"{refname}[]"
 				else:
 					raise Exception("NOT IMPLEMENTED")
-			elif self.type == "numpydata":
-				return "any"
+			elif REF_START in self.type:
+				return self.type.replace(REF_START, "")
 			else:
 				return self.type
 
@@ -154,25 +155,45 @@ def regenerate_schema():
 			with code.block("def toJson(self):"):
 				with code.block(f"return OrderedDict([", "])"):
 					for prop in props:
-						if prop.type == "array" and "$ref" in prop["items"]:
-							code.line(f"(\"{prop.name}\", list(map(lambda x: x.toJson(), self.{prop.name}))),")
+						if prop.type == "array":
+							if REF_START in prop["items"]["type"]:
+								code.line(f"(\"{prop.name}\", list(map(lambda x: x if x is None else x.toJson(), self.{prop.name}))),")
+							else:
+								raise Exception("NOT IMPLEMENTED")
+						elif REF_START in prop.type:
+							code.line(f"(\"{prop.name}\", self.{prop.name} if self.{prop.name} is None else self.{prop.name}.toJson()),")
 						else:
 							code.line(f"(\"{prop.name}\", self.{prop.name}),")
 
+
+			code.line("")
+			
+			with code.block("def updateFromJson(self, json: OrderedDict):"):
+				with code.block("if json is None:"):
+					code.line("return")
+				for prop in props:
+					with code.block(f"if \"{prop.name}\" in json:"):
+						if prop.type == "array":
+							element_type = prop["items"]["type"]
+							if REF_START in element_type:
+								element_type = element_type.replace(REF_START, "") 
+								code.line(f"self.{prop.name} = list(map(lambda x: {element_type}.fromJson(x), json.get(\"{prop.name}\")))")
+							else:
+								raise Exception("NOT IMPLEMENTED")
+						if REF_START in prop.type:
+							prop_type = prop.type.replace(REF_START, "")
+							code.line(f"self.{prop.name} = {prop_type}.fromJson(json.get(\"{prop.name}\"))")
+						else:
+							code.line(f"self.{prop.name} = json.get(\"{prop.name}\")")
 
 			code.line("")
 
 			code.line("@classmethod")
 			with code.block("def fromJson(cls, json: OrderedDict):"):
 				code.line(f"self = {object.name}()")
-				for prop in props:
-					# code.line(f"self.{prop.name} = {refname}.fromJson(json.get(\"{prop.name}\"))")
-					if prop.type == "array" and "$ref" in prop["items"]:
-						refname = prop["items"]["$ref"].replace(REF_START, "") 
-						code.line(f"self.{prop.name} = list(map(lambda x: {refname}.fromJson(x), json.get(\"{prop.name}\")))")
-					else:
-						code.line(f"self.{prop.name} = json.get(\"{prop.name}\")")
+				code.line("self.updateFromJson(json)")
 				code.line(f"return self")
+
 
 			code.line("")
 
@@ -202,6 +223,8 @@ def regenerate_schema():
 	code = CodeBuilder()
 	code.line("import npyjs from 'npyjs';")
 	code.line("import ndarray from 'ndarray';")
+	code.line("import { createSignal, SimpleSignal } from '@motion-canvas/core';")
+	code.line("")
 
 
 	object_names = []
@@ -213,6 +236,10 @@ def regenerate_schema():
 		with code.block(f"class {object.name} {{", "}"):
 			for prop in props:
 				code.line(f"{prop.name}: {prop.typescript_type};")
+			if object.name == "NumpyData":
+				code.line("data: any;")
+				code.line("frameSignal: SimpleSignal<number>;")
+				code.line("valueSignal: SimpleSignal<number>;")
 			code.line("")
 
 			const_args = []
@@ -221,27 +248,36 @@ def regenerate_schema():
 			with code.block(f"constructor(json: {{ {' '.join(const_args)} }}) {{", "}"):
 				for prop in props:
 					if prop.type == "array":
-						if "$ref" in prop["items"]:
-							refname = prop["items"]["$ref"].replace(REF_START, "") 
+						element_type = prop["items"]["type"]
+						if REF_START in element_type:
+							element_type = element_type.replace(REF_START, "") 
 							code.line(f"this.{prop.name} = json.{prop.name}.map(d => new StemInfo(d));")
 						else:
 							raise Exception("NOT IMPLEMENTED")
+					elif REF_START in prop.type:
+						prop_type = prop.type.replace(REF_START, "")
+						code.line(f"this.{prop.name} = new {prop_type}(json.{prop.name});")
 					else:
 						code.line(f"this.{prop.name} = json.{prop.name};")
+				if object.name == "NumpyData":
+					code.line("this.frameSignal = createSignal(0);")
+					code.line("this.valueSignal = createSignal(0);")
 		
-			data_props = []
-			for prop in props:
-				if prop.name.startswith("DATA_"):
-					data_props.append(prop)
+			# add a load() for everything
+			if object.name == "StemInfo":
+				code.line("")
+				with code.block("getDataProps(): NumpyData[] {", "}"):
+					with code.block("return [", "]"):
+						for prop in props:
+							if prop.type == "#/NumpyData":
+								code.line(f"this.{prop.name},")
 
-			if data_props:
+			if object.name == "NumpyData":
 				code.line("")
 				with code.block("async load(): Promise<void> {", "}"):
 					code.line("const n = new npyjs();")
-					for prop in data_props:
-						code.line(f"var r_{prop.name} = await n.load(this.{prop.name});")
-						code.line(f"this.{prop.name} = ndarray(r_{prop.name}.data, r_{prop.name}.shape);")
-					
+					code.line(f"var response = await n.load(this.filename);")
+					code.line(f"this.data = ndarray(response.data, response.shape);")
 
 		
 		code.line("")

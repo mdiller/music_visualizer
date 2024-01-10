@@ -1,4 +1,5 @@
 import { Gradient } from "@motion-canvas/2d";
+import { Color } from "@motion-canvas/core";
 import { StemInfo } from "../generated/DataClasses";
 
 
@@ -34,7 +35,7 @@ export class CoolGradient {
 
 		// F Major
 		let scaleSteps: number[] = majorScaleSteps;
-		let keyRootOffset: number = 5; // how many half-steps up from A is the root of the key (F => 8) (D => 5)
+		let keyRootOffset: number = 5; // how many half-steps up from A is the root of the key (F (dls) => 8) (D (whatif) => 5) (Eb (heartburn) => 6)
 
 		let stepsPerOctave: number = scaleSteps.length; // should be 12
 
@@ -132,7 +133,7 @@ export class CoolGradient {
 		});
 	}
 	
-	getColorAt(percent: number): string {
+	getColorAt(percent: number): Color {
         // Ensure the input is between 0 and 1
         percent = Math.max(0, Math.min(1, percent));
 
@@ -141,10 +142,10 @@ export class CoolGradient {
             throw new Error("Gradient has no color stops");
         }
         if (this.stops.length === 1 || percent <= this.stops[0].offset) {
-            return this.stops[0].color;
+            return new Color(this.stops[0].color);
         }
         if (percent >= this.stops[this.stops.length - 1].offset) {
-            return this.stops[this.stops.length - 1].color;
+            return new Color(this.stops[this.stops.length - 1].color);
         }
 
         // Find the two stops between which the percentage falls
@@ -163,7 +164,7 @@ export class CoolGradient {
         const localPercent = (percent - startStop.offset) / range;
 
         // Interpolate the color
-        return this.interpolateColor(startStop.color, endStop.color, localPercent);
+        return new Color(this.interpolateColor(startStop.color, endStop.color, localPercent));
     }
 
     private interpolateColor(color1: string, color2: string, percent: number): string {

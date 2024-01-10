@@ -6,14 +6,23 @@ import hashlib
 import os
 from collections import OrderedDict
 import json
+import matplotlib
+matplotlib.use('Agg')
 
-from data_classes import StemInfo
+from data_classes import NumpyData, StemInfo
 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
 def hash_string(input: str):
 	return hashlib.sha256(input.encode()).hexdigest()[:10]
+
+class DataStub():
+	def __init__(self, data: np.ndarray, key: str, framerate: float, offset: float = 0):
+		self.data = data
+		self.key = key
+		self.framerate = framerate
+		self.offset = offset
 
 class StepOutput():
 	def __init__(self, filepath):
@@ -78,19 +87,43 @@ class SongProcessor():
 		self,
 	):
 		data, sr = librosa.load(self.filename)
+		self.info.samplerate = sr
+		return data
+	
+	def STEP_beats(
+		self,
+		STEP_extract_audio: StepOutput,
+	):
+		# data, samplerate = librosa.load(librosa.ex('choice'), duration=10)
+		data = STEP_extract_audio.read()
+		# samplerate = self.info.samplerate
+		# onset_env = librosa.onset.onset_strength(y=data, sr=samplerate, aggregate=np.median)
+		# tempo, beats = librosa.beat.beat_track(onset_envelope=onset_env, sr=samplerate)
+		# # frames_time = librosa.frames_to_time(beats, sr=self.info.samplerate)
+		# beat_bins = 5
+		# beat_data = np.zeros(np.max(beats) + 1)
+		# for i in range(beats.shape[0]):
+		# 	beat_data[beats[i]] = 1
+
+		# self.info.bpm = tempo
+		# return DataStub(beat_data, "DATA_beats", 200)
 		return data
 	
 	def STEP_volume(
 		self,
 		STEP_extract_audio: StepOutput,
-		volume_framerate: int = 1
+		overlap: int = 2,
 	):
+		bpm = 67 # TODO: calculate this later
+		volume_framerate: float = 2 * bpm / 60
 		data = STEP_extract_audio.read()
-		sr = 22050 # TODO: fix/update so that we can get this dynamically. librosa.get_samplerate gets wrong value. 
 
 		# Calculate frame length and hop length
-		frame_length = sr // volume_framerate
-		hop_length = frame_length // 2  # 50% overlap
+		# frame_length = self.info.samplerate // volume_framerate
+		# hop_length = frame_length // 2  # 50% overlap
+
+		hop_length = int(self.info.samplerate // volume_framerate)
+		frame_length = hop_length * overlap
 
 		# Compute short-term Fourier transform
 		stft = librosa.stft(data, n_fft=frame_length, hop_length=hop_length)
@@ -107,7 +140,7 @@ class SongProcessor():
 		data = np.maximum(data, 0)
 		data /= np.max(data)
 
-		return data, "DATA_volume"
+		return DataStub(data, "DATA_volume", volume_framerate)
 	
 	def STEP_volume_velocity(
 		self,
@@ -118,7 +151,7 @@ class SongProcessor():
 		modifier = 1
 		data = np.diff(data) / modifier
 
-		return data, "DATA_volume_velocity"
+		return DataStub(data, "DATA_volume_velocity", self.info.DATA_volume.framerate)
 	
 	def STEP_volume_rolling_average(
 		self,
@@ -131,7 +164,10 @@ class SongProcessor():
 		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
 		data /= np.max(data)
 
-		return data, "DATA_volume_rolling_average"
+		# can get the framerate for below by doing info.DATA_volume.framerate
+		# SHOULD ALSO HAVE an offset parameter, sometimes we want to offset x time into the data before doing framerate?
+		# should prolly have these be the same units actually.. ms?
+		return DataStub(data, "DATA_volume_rolling_average", self.info.DATA_volume.framerate)
 
 	
 	def STEP_raw_spectrogram(
@@ -143,16 +179,15 @@ class SongProcessor():
 		octaves: int = 9
 	) -> np.ndarray:
 		data = STEP_extract_audio.read()
-		sr = 22050 # TODO: fix/update so that we can get this dynamically. librosa.get_samplerate gets wrong value. 
 		fmin = librosa.midi_to_hz(midi_min)
 
 		n_bins = octaves * bins_per_octave
-		hop_length = int(sr / framerate)
-		actual_framerate = sr / hop_length
+		hop_length = int(self.info.samplerate / framerate)
+		actual_framerate = self.info.samplerate / hop_length
 
 		data = librosa.cqt(
 			data,
-			sr=sr,
+			sr=self.info.samplerate,
 			fmin=fmin,
 			n_bins=n_bins,
 			bins_per_octave=bins_per_octave,
@@ -177,11 +212,62 @@ class SongProcessor():
 		data = librosa.util.normalize(data)
 
 		return data
+
+	def STEP_spectrogram_held_notes(
+		self,
+		STEP_normalize: StepOutput
+	) -> np.ndarray:
+		data = STEP_normalize.read()
+		threshold = 0.3
+		growth_rate = 1.0
+		decay_rate = 10.0
+		max_seconds = 1
+		threshold_seconds = 0.2
+		max_frames = self.info.framerate * max_seconds
+		threshold_frames = threshold_seconds * self.info.framerate
+
+		data = data.T
+		result = np.copy(data)
+		hold_duration = np.zeros(data.shape[1])
+		for frame in reversed(range(data.shape[0])):
+			for bin in range(data.shape[1]):
+				if data[frame, bin] > threshold:
+					if hold_duration[bin] < max_frames:
+						hold_duration[bin] += growth_rate
+				else:
+					if hold_duration[bin] > 0:
+						hold_duration[bin] -= np.minimum(decay_rate, hold_duration[bin])
+				
+				if hold_duration[bin] > threshold_frames:
+					result[frame, bin] += hold_duration[bin]
+				else:
+					result[frame, bin] = 0
+		
+		result[0, 0] = 1
+				
+		result = np.maximum(result, 0)
+		result /= np.max(result)
+
+		return DataStub(result, "DATA_spectrogram_held_notes", self.info.framerate)
+
+	def STEP_spectro_clean(
+		self,
+		STEP_normalize: StepOutput,
+	) -> np.array:
+		data = STEP_normalize.read()
+
+		data = data.T
+		
+		data = np.maximum(data, 0)
+		data /= np.max(data)
+
+		return DataStub(data, "DATA_spectrogram", self.info.framerate)
+
 	
 	def STEP_decay_and_filter(
 		self,
 		STEP_normalize: StepOutput,
-		decay_factor: float = 0.9,
+		decay_factor: float = 0.8,
 		remove_negatives: bool = True,
 		fill_value_range: bool = True
 	) -> np.ndarray:
@@ -202,7 +288,7 @@ class SongProcessor():
 		if fill_value_range:
 			data /= np.max(data)
 
-		return data, "DATA_spectrogram"
+		return DataStub(data, "DATA_spectrogram_decayed", self.info.framerate)
 	
 	def STEP_final(
 		self,
@@ -236,7 +322,7 @@ class SongProcessor():
 	def run(self, direct_print = False):
 		self.direct_print = direct_print
 		run_all = False
-		final_info_json = OrderedDict({})
+		self.info = StemInfo()
 		
 		if run_all:
 			self.print("Running all...")
@@ -283,23 +369,40 @@ class SongProcessor():
 
 				if (not step_output.exists) or run_all:
 					self.print(f"Running: {func_name}{input_str}")
-					self.info = StemInfo()
+					json_before = self.info.toJson()
 					result = func(**{k: v for k, v in arg_values.items() if v is not inspect.Parameter.empty})
+					
+					if isinstance(result, DataStub):
+						result: DataStub
+						# VERIFY KEY HERE
+						# CREATE NEW CLASS HERE
+						if not hasattr(StemInfo(), result.key):
+							raise Exception(f"MISSING KEY '{result.key}' IN StemInfo")
+						
+						data_thing = NumpyData()
+						data_thing.filename = os.path.relpath(os.path.abspath(step_output.filepath_npy), ROOT_DIR)
+						data_thing.framerate = result.framerate
+						data_thing.offset = result.offset
+						setattr(self.info, result.key, data_thing)
+
+						result = result.data
+						
 					info_json = self.info.toJson()
 					
-					if isinstance(result, tuple):
-						result, info_key = result
-						info_json[info_key] = os.path.relpath(os.path.abspath(step_output.filepath_npy), ROOT_DIR)
+					duplicate_keys = []
+					for key in info_json:
+						if json_before.get(key) == info_json.get(key):
+							duplicate_keys.append(key)
+					for key in duplicate_keys:
+						del info_json[key]
 
 					step_output.save(result, info_json)
 				else:
 					self.print(f"Verified: {func_name}.{input_hash}")
 					info_json = step_output.read_info()
-				
+					self.info.updateFromJson(info_json)
+
 				# apply our info changes if there were any
-				for key in info_json:
-					if info_json.get(key) is not None:
-						final_info_json[key] = info_json[key]
 
 				step_outputs[func_name] = step_output
 				
@@ -310,8 +413,7 @@ class SongProcessor():
 			self.print(f"ERROR: UNRESOLVED FUNCS AFTER RUNNING")
 			raise Exception("ahhhh unresolved funcs")
 		
-		final_info = StemInfo.fromJson(final_info_json)
-		final_info.writeFile(self.info_file)
+		self.info.writeFile(self.info_file)
 
 		if not direct_print:
 			print(self.name)
