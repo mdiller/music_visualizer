@@ -88,13 +88,13 @@ stems.append(SongStem(FULL_SONG_STEMNAME))
 
 print("] Processing audio data...")
 
-# for stem in stems:
-# 	print(f"==> {stem.name}:")
-# 	stem.processor.run(True)
+for stem in stems:
+	print(f"==> {stem.name}:")
+	stem.processor.run(True)
 
-def process_stem(stem: SongStem):
-	stem.processor.run()
-Parallel(n_jobs=len(stems))(delayed(process_stem)(stem) for stem in stems)
+# def process_stem(stem: SongStem):
+# 	stem.processor.run()
+# Parallel(n_jobs=len(stems))(delayed(process_stem)(stem) for stem in stems)
 
 stem_infos = []
 for stem in stems:

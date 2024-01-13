@@ -153,6 +153,33 @@ class SongProcessor():
 
 		return DataStub(data, "DATA_volume_velocity", self.info.DATA_volume.framerate)
 	
+	def STEP_volume_detailed_average(
+		self,
+		STEP_extract_audio: StepOutput,
+	):
+		bpm = 67 # TODO: calculate this later
+		overlap = 2
+		window_size = 10
+
+		volume_framerate = self.info.framerate
+		data = STEP_extract_audio.read()
+
+		# Get volume data
+		hop_length = int(self.info.samplerate // volume_framerate)
+		frame_length = hop_length * overlap
+		stft = librosa.stft(data, n_fft=frame_length, hop_length=hop_length)
+		powerSpectrum = np.abs(stft)**2
+		rms = librosa.feature.rms(S=powerSpectrum, frame_length=frame_length, hop_length=hop_length)
+		data = rms.flatten()
+
+		# Rolling average volume data
+		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
+
+		data = np.maximum(data, 0)
+		data /= np.max(data)
+
+		return DataStub(data, "DATA_volume_detailed_average", volume_framerate)
+	
 	def STEP_volume_rolling_average(
 		self,
 		STEP_volume: StepOutput
@@ -164,9 +191,6 @@ class SongProcessor():
 		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
 		data /= np.max(data)
 
-		# can get the framerate for below by doing info.DATA_volume.framerate
-		# SHOULD ALSO HAVE an offset parameter, sometimes we want to offset x time into the data before doing framerate?
-		# should prolly have these be the same units actually.. ms?
 		return DataStub(data, "DATA_volume_rolling_average", self.info.DATA_volume.framerate)
 
 	
@@ -289,6 +313,29 @@ class SongProcessor():
 			data /= np.max(data)
 
 		return DataStub(data, "DATA_spectrogram_decayed", self.info.framerate)
+	
+	
+	def STEP_frequency_average(
+		self,
+		STEP_decay_and_filter: StepOutput
+	) -> np.ndarray:
+		data = STEP_decay_and_filter.read()
+
+		frequencies = np.zeros(data.shape[0])
+		# Create an array of frequency indices (assuming they start from 0 and go up by 1)
+		frequency_indices = np.arange(data.shape[1])
+
+
+		for i in range(data.shape[0]):
+			if np.sum(data[i]) != 0:
+				frequencies[i] = np.average(frequency_indices, weights=data[i])
+			# weighted_sum = np.sum(frequency_indices * data[i])
+			# total_intensity = np.sum(data[i])
+			# frequencies[i] = weighted_sum / total_intensity
+		
+		frequencies /= data.shape[1]
+
+		return DataStub(frequencies, "DATA_frequency_average", self.info.framerate)
 	
 	def STEP_final(
 		self,

@@ -1,6 +1,8 @@
 import {makeScene2D, Circle, Path, signal, Rect, Layout} from '@motion-canvas/2d';
 import {all, Color, createRef, createSignal, map, ThreadGenerator, tween, Vector2, waitFor} from '@motion-canvas/core';
+import { FreqGradient } from '../components/FreqGradient';
 import { FreqHistogram } from '../components/FreqHistogram';
+import { GradientEchoes } from '../components/GradientEchoes';
 import { PathEchoes } from '../components/PathEchoes';
 import { SimpleLine } from '../components/SimpleLine';
 import { NumpyData } from '../generated/DataClasses';
@@ -32,6 +34,7 @@ export default makeScene2D(function* (view) {
   const drumHistSize = new Vector2(canvas.height - (drumYBuffer * 2), 500);
 
   const vocalHistSize = new Vector2(canvas.width - (drumHistSize.y * 2), 300);
+  // vocalHistSize.width = canvas.width;
 
   const lineSize = new Vector2(canvas.width, 100);
 
@@ -41,31 +44,51 @@ export default makeScene2D(function* (view) {
 
   const background_color = createSignal(new Color("#ff0000"))
   
+  background_color(() => {
+    return background_gradient.getColorAt(STEMS.song.DATA_volume_rolling_average.valueSignal())
+  });
+
   var volume_data = STEMS.song.DATA_volume_rolling_average;
 
   view.add(
     <Rect width={"100%"} height={"100%"} fill={background_color}>
-      <PathEchoes 
+      {/* <GradientEchoes
+        frameData={STEMS.drums.DATA_volume_detailed_average}
+        size={canvas}
+        percent={percent_through}
+        opacity={0.5}
+      /> */}
+      <PathEchoes
+        frameData={STEMS.drums.DATA_volume_detailed_average}
         size={canvas}
         percent={percent_through}
         position={[canvas.width / -2, canvas.height / -2]}
+        gradient={() => {
+          return CoolGradient.fromColors([background_color().hex(), background_color().hex(), "#131556", "#131571", "#131592"])
+        }}
       />
-      <SimpleLine
+      {/* <SimpleLine
         size={lineSize}
         percent_through={percent_through}
         line_data={volume_data} // line
-        position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height - lineSize.height - 50]} />
-      <SimpleLine
+        position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height - lineSize.height - 50]} /> */}
+      {/* <SimpleLine
         size={lineSize}
         percent_through={percent_through}
-        line_data={STEMS.song.DATA_volume_velocity} // line
-        position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} />
+        line_data={STEMS.vocals.DATA_frequency_average} // line
+        position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} /> */}
       <FreqHistogram
         size={histSize}
         scale={[1, -1]}
-        stem={STEMS.bass} // bass
-        gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2")}
+        stem={STEMS.other} // other
+        gradient={CoolGradient.fromColors(["#0e49be", "#ab08d2", "#0e49be"], true)}
         position={[0 - (canvas.width / 2),  0 - ((canvas.height / 2) - histSize.height)]} />
+      {/* <FreqGradient
+        size={histSize}
+        scale={[1, -1]}
+        stem={STEMS.other} // other
+        gradient={() => CoolGradient.fromColors(["#7f08d200", "#0e49be"])}
+        position={[0 - (canvas.width / 2),  0 - ((canvas.height / 2) - histSize.height)]} /> */}
       <FreqHistogram
         size={drumHistSize}
         rotation={-90}
@@ -90,15 +113,11 @@ export default makeScene2D(function* (view) {
         position={[vocalHistSize.x / -2, vocalHistSize.y]} />
       <FreqHistogram
         size={histSize}
-        stem={STEMS.other} // other
-        gradient={CoolGradient.fromColors(["#0e49be", "#ab08d2", "#0e49be"], true)}
+        stem={STEMS.bass} // base
+        gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2")}
         position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} />
     </Rect>
   );
-
-  background_color(() => {
-    return background_gradient.getColorAt(STEMS.song.DATA_volume_rolling_average.valueSignal())
-  });
 
   
 
@@ -133,6 +152,7 @@ export default makeScene2D(function* (view) {
   }))
 
   generators.push(percentGenerator());
+  // generators.push(pathEchoes().generator(STEMS.song.DATA_volume_rolling_average));
 
   yield * all(...generators);
 });

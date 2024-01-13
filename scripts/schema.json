@@ -51,7 +51,10 @@
 			"DATA_spectrogram_decayed": {
 				"type": "#/NumpyData"
 			},
-			"DATA_volume_in_time": {
+			"DATA_volume_detailed_average": {
+				"type": "#/NumpyData"
+			},
+			"DATA_frequency_average": {
 				"type": "#/NumpyData"
 			}
 		}

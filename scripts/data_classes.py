@@ -1,9 +1,9 @@
-# VERSION_HASH: 50dcde7c61_a5e676d4a9
+# VERSION_HASH: e3904a5e7c_beb6da1155
 import json
 from collections import OrderedDict
 
 class StemInfo():
-	def __init__(self, name = None, samplerate = None, frame_count = None, framerate = None, octaves = None, bins_per_octave = None, min_x = None, max_x = None, bpm = None, bpm_offset = None, DATA_spectrogram = None, DATA_volume = None, DATA_volume_velocity = None, DATA_volume_rolling_average = None, DATA_spectrogram_held_notes = None, DATA_spectrogram_decayed = None, DATA_volume_in_time = None):
+	def __init__(self, name = None, samplerate = None, frame_count = None, framerate = None, octaves = None, bins_per_octave = None, min_x = None, max_x = None, bpm = None, bpm_offset = None, DATA_spectrogram = None, DATA_volume = None, DATA_volume_velocity = None, DATA_volume_rolling_average = None, DATA_spectrogram_held_notes = None, DATA_spectrogram_decayed = None, DATA_volume_detailed_average = None, DATA_frequency_average = None):
 		self.name = name
 		self.samplerate = samplerate
 		self.frame_count = frame_count
@@ -20,7 +20,8 @@ class StemInfo():
 		self.DATA_volume_rolling_average = DATA_volume_rolling_average
 		self.DATA_spectrogram_held_notes = DATA_spectrogram_held_notes
 		self.DATA_spectrogram_decayed = DATA_spectrogram_decayed
-		self.DATA_volume_in_time = DATA_volume_in_time
+		self.DATA_volume_detailed_average = DATA_volume_detailed_average
+		self.DATA_frequency_average = DATA_frequency_average
 
 	def toJson(self):
 		return OrderedDict([
@@ -40,7 +41,8 @@ class StemInfo():
 			("DATA_volume_rolling_average", self.DATA_volume_rolling_average if self.DATA_volume_rolling_average is None else self.DATA_volume_rolling_average.toJson()),
 			("DATA_spectrogram_held_notes", self.DATA_spectrogram_held_notes if self.DATA_spectrogram_held_notes is None else self.DATA_spectrogram_held_notes.toJson()),
 			("DATA_spectrogram_decayed", self.DATA_spectrogram_decayed if self.DATA_spectrogram_decayed is None else self.DATA_spectrogram_decayed.toJson()),
-			("DATA_volume_in_time", self.DATA_volume_in_time if self.DATA_volume_in_time is None else self.DATA_volume_in_time.toJson()),
+			("DATA_volume_detailed_average", self.DATA_volume_detailed_average if self.DATA_volume_detailed_average is None else self.DATA_volume_detailed_average.toJson()),
+			("DATA_frequency_average", self.DATA_frequency_average if self.DATA_frequency_average is None else self.DATA_frequency_average.toJson()),
 		])
 
 	def updateFromJson(self, json: OrderedDict):
@@ -78,8 +80,10 @@ class StemInfo():
 			self.DATA_spectrogram_held_notes = NumpyData.fromJson(json.get("DATA_spectrogram_held_notes"))
 		if "DATA_spectrogram_decayed" in json:
 			self.DATA_spectrogram_decayed = NumpyData.fromJson(json.get("DATA_spectrogram_decayed"))
-		if "DATA_volume_in_time" in json:
-			self.DATA_volume_in_time = NumpyData.fromJson(json.get("DATA_volume_in_time"))
+		if "DATA_volume_detailed_average" in json:
+			self.DATA_volume_detailed_average = NumpyData.fromJson(json.get("DATA_volume_detailed_average"))
+		if "DATA_frequency_average" in json:
+			self.DATA_frequency_average = NumpyData.fromJson(json.get("DATA_frequency_average"))
 
 	@classmethod
 	def fromJson(cls, json: OrderedDict):

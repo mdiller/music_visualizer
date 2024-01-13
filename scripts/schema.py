@@ -275,9 +275,12 @@ def regenerate_schema():
 			if object.name == "NumpyData":
 				code.line("")
 				with code.block("async load(): Promise<void> {", "}"):
-					code.line("const n = new npyjs();")
-					code.line(f"var response = await n.load(this.filename);")
-					code.line(f"this.data = ndarray(response.data, response.shape);")
+					with code.block("if (this.filename == null) {", "}"):
+						code.line("console.error(\"Missing numpy file!\");")
+					with code.block("else {", "}"):
+						code.line("const n = new npyjs();")
+						code.line(f"var response = await n.load(this.filename);")
+						code.line(f"this.data = ndarray(response.data, response.shape);")
 
 		
 		code.line("")

@@ -9,6 +9,7 @@ import {
 	Gradient,
 	Vector2LengthSignal,
 	Circle,
+	GradientStop,
 } from '@motion-canvas/2d';
 import {
 	SignalValue,
@@ -108,13 +109,13 @@ function createPathData(stem_info: StemInfo, spectrogram: NumpyData, frame: numb
 	return d;
 }
 
-export interface FreqHistogramProps extends NodeProps {
+export interface FreqGradientProps extends NodeProps {
 	stem: SignalValue<StemInfo>;
 	gradient?: SignalValue<CoolGradient>;
 	size: SignalValue<Vector2>;
 }
 
-export class FreqHistogram extends Node {
+export class FreqGradient extends Node {
 	@signal()
 	public declare readonly stem: SimpleSignal<StemInfo, this>;
 
@@ -134,7 +135,70 @@ export class FreqHistogram extends Node {
 	private readonly dataDecayed = createSignal(() => createPathData(this.stem(), this.stem().DATA_spectrogram_decayed, this.stem().DATA_spectrogram_decayed.frameSignal(), this.size().x, this.size().y));
 	private readonly dataNoWrap = createSignal(() => createPathData(this.stem(), this.stem().DATA_spectrogram, this.stem().DATA_spectrogram.frameSignal(), this.size().x, this.size().y, true));
 
-	public constructor(props?: FreqHistogramProps) {
+	private readonly actualGradient = createSignal(() => {
+		var stem = this.stem();
+		var spectrogram = stem.DATA_spectrogram_decayed;
+		var width = this.size().width;
+		var frame = spectrogram.frameSignal();
+		var gradient = this.gradient();
+
+		var data = spectrogram.data;
+		var frameLength = data.shape[1];
+		var x_range = stem.max_x - stem.min_x
+		var xMultiplier = 1 / x_range;
+		var x_floor = stem.min_x;
+
+		var stops: GradientStop[] = [];
+
+		var zero_color = gradient.getColorAt(0);
+
+		stops.push({
+			offset: 0,
+			color: zero_color
+		});
+
+		var just_wrote_0 = true;
+
+		for (var i = stem.min_x; i < stem.max_x; i++) {
+			let xValue = (i - x_floor) * xMultiplier;
+			let yValue = data.get(frame, i);
+
+			if (yValue > 0.05) {
+				stops.push({
+					offset: xValue,
+					color: gradient.getColorAt(yValue)
+				});
+				just_wrote_0 = false;
+			}
+			else if (!just_wrote_0) {
+				stops.push({
+					offset: xValue,
+					color: zero_color
+				});
+				just_wrote_0 = true;
+			}
+		}
+
+		stops.push({
+			offset: 1,
+			color: zero_color
+		});
+
+		stops.forEach(stop => {
+			console.log(stop.offset, stop.color.hex())
+		})
+
+		console.log(stops);
+
+		return new Gradient({
+			type: 'linear',
+			fromX: 0,
+			toX: width,
+			stops: stops
+		});
+	})
+
+	public constructor(props?: FreqGradientProps) {
 		super({
 			...props,
 		});
@@ -142,44 +206,12 @@ export class FreqHistogram extends Node {
 		const back_opacity = 1;
 
 		this.add(
-			<Node>
-				{/* <Circle
-					fill={"#0000ff"}
-					size={[30, 30]}
-					y={() => this.size().height / 2}
-					x={() => {
-						var stem = this.stem();
-						var x_range = stem.max_x - stem.min_x
-						var value = stem.DATA_frequency_average.valueSignal();
-						value *= stem.DATA_spectrogram.data.shape[1];
-						value -= stem.min_x;
-						value *= this.size().width / x_range;
-
-						return value
-					}}
-					opacity={() => this.stem().DATA_volume_detailed_average.valueSignal() * 2}
-				></Circle> */}
-				<Path
-					// stroke={"#d0d900"}
-					// lineWidth={4}
-					fill={() => this.gradient().toGradient(this.size().x, this.stem())} // "#d0d900"
-					ref={this.path_line}
-					data={() => this.dataNoWrap()}
-				></Path>
-				<Path
-					opacity={back_opacity}
-					fill={() => this.gradient().toGradient(this.size().x, this.stem())}
-					data={() => this.dataDecayed()}
-				></Path>
-				<Path
-					opacity={0}
-					ref={this.path_blur}
-					fill={() => this.gradient().toGradient(this.size().x, this.stem())}
-					data={() => this.dataDecayed()}
-				></Path>
-			</Node>
+			<Rect
+				fill={this.actualGradient}
+				size={this.size}
+				x={() => this.size().width / 2}
+				y={() => this.size().height / 2}
+			/>
 		);
-		this.path_blur().filters.blur(() => this.stem().DATA_volume_rolling_average.valueSignal() * 20)
-		this.path_line().filters.blur(() => 10)
 	}
 }
