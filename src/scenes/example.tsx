@@ -5,6 +5,7 @@ import { FreqHistogram } from '../components/FreqHistogram';
 import { GradientEchoes } from '../components/GradientEchoes';
 import { PathEchoes } from '../components/PathEchoes';
 import { SimpleLine } from '../components/SimpleLine';
+import { StickMan } from '../components/StickMan';
 import { NumpyData } from '../generated/DataClasses';
 
 import { CoolGradient } from '../utils/CoolGradient';
@@ -37,6 +38,8 @@ export default makeScene2D(function* (view) {
   // vocalHistSize.width = canvas.width;
 
   const lineSize = new Vector2(canvas.width, 100);
+
+  const manSize = new Vector2(500, 500);
 
 
   // #3b0c0f, 0b0c0f
@@ -116,6 +119,11 @@ export default makeScene2D(function* (view) {
         stem={STEMS.bass} // base
         gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2")}
         position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} />
+      <StickMan
+        size={manSize}
+        percent_through={percent_through}
+        position={[manSize.width / -2, manSize.height / -2]}
+      />
     </Rect>
   );
 
