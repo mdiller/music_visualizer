@@ -6,6 +6,8 @@ import hashlib
 import os
 from collections import OrderedDict
 import json
+from data_cache import NumpyCache, hash_string
+
 import matplotlib
 matplotlib.use('Agg')
 
@@ -14,8 +16,6 @@ from data_classes import NumpyData, StemInfo
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-def hash_string(input: str):
-	return hashlib.sha256(input.encode()).hexdigest()[:10]
 
 class DataStub():
 	def __init__(self, data: np.ndarray, key: str, framerate: float, offset: float = 0):
@@ -23,53 +23,6 @@ class DataStub():
 		self.key = key
 		self.framerate = framerate
 		self.offset = offset
-
-class StepOutput():
-	def __init__(self, filepath):
-		self.filepath = filepath
-		self.data = None
-		self._hash = None
-		self.direct_print = False
-	
-	@property
-	def filepath_npy(self):
-		return self.filepath + ".npy"
-
-	@property
-	def filepath_json(self):
-		return self.filepath + ".json"
-	
-	@property
-	def exists(self):
-		return os.path.exists(self.filepath_json)
-
-	@property
-	def hash(self):
-		if not self._hash:
-			self._hash = hash_string(self.filepath)
-		return self._hash
-
-	def save(self, data: np.ndarray, info: OrderedDict):
-		if data is None:
-			data = np.empty([1, 1])
-		self.data = data
-		np.save(self.filepath_npy, self.data)
-		text = json.dumps(info)
-		with open(self.filepath_json, "w+") as f:
-			f.write(text)
-
-	def read(self) -> np.ndarray:
-		if self.data is None:
-			self.data = np.load(self.filepath_npy)
-		return self.data
-	
-	def read_info(self) -> OrderedDict:
-		with open(self.filepath_json, "r") as f:
-			return json.loads(f.read(), object_pairs_hook=OrderedDict)
-	
-	def __repr__(self):
-		return self.hash
-
 
 class SongProcessor():
 	info: StemInfo
@@ -92,7 +45,7 @@ class SongProcessor():
 	
 	def STEP_beats(
 		self,
-		STEP_extract_audio: StepOutput,
+		STEP_extract_audio: NumpyCache,
 	):
 		# data, samplerate = librosa.load(librosa.ex('choice'), duration=10)
 		data = STEP_extract_audio.read()
@@ -111,7 +64,7 @@ class SongProcessor():
 	
 	def STEP_volume(
 		self,
-		STEP_extract_audio: StepOutput,
+		STEP_extract_audio: NumpyCache,
 		overlap: int = 2,
 	):
 		bpm = 67 # TODO: calculate this later
@@ -144,7 +97,7 @@ class SongProcessor():
 	
 	def STEP_volume_velocity(
 		self,
-		STEP_volume: StepOutput
+		STEP_volume: NumpyCache
 	):
 		data = STEP_volume.read()
 
@@ -155,7 +108,7 @@ class SongProcessor():
 	
 	def STEP_volume_detailed_average(
 		self,
-		STEP_extract_audio: StepOutput,
+		STEP_extract_audio: NumpyCache,
 	):
 		bpm = 67 # TODO: calculate this later
 		overlap = 2
@@ -182,7 +135,7 @@ class SongProcessor():
 	
 	def STEP_volume_rolling_average(
 		self,
-		STEP_volume: StepOutput
+		STEP_volume: NumpyCache
 	):
 		data = STEP_volume.read()
 
@@ -196,7 +149,7 @@ class SongProcessor():
 	
 	def STEP_raw_spectrogram(
 		self,
-		STEP_extract_audio: StepOutput,
+		STEP_extract_audio: NumpyCache,
 		midi_min: int = 9,
 		framerate: int = 30,
 		bins_per_octave: int = 48,
@@ -227,7 +180,7 @@ class SongProcessor():
 
 	def STEP_normalize(
 		self,
-		STEP_raw_spectrogram: StepOutput,
+		STEP_raw_spectrogram: NumpyCache,
 		amplitude_ref: float = 0.6
 	) -> np.ndarray:
 		data = STEP_raw_spectrogram.read()
@@ -239,7 +192,7 @@ class SongProcessor():
 
 	def STEP_spectrogram_held_notes(
 		self,
-		STEP_normalize: StepOutput
+		STEP_normalize: NumpyCache
 	) -> np.ndarray:
 		data = STEP_normalize.read()
 		threshold = 0.3
@@ -276,7 +229,7 @@ class SongProcessor():
 
 	def STEP_spectro_clean(
 		self,
-		STEP_normalize: StepOutput,
+		STEP_normalize: NumpyCache,
 	) -> np.array:
 		data = STEP_normalize.read()
 
@@ -290,7 +243,7 @@ class SongProcessor():
 	
 	def STEP_decay_and_filter(
 		self,
-		STEP_normalize: StepOutput,
+		STEP_normalize: NumpyCache,
 		decay_factor: float = 0.8,
 		remove_negatives: bool = True,
 		fill_value_range: bool = True
@@ -317,7 +270,7 @@ class SongProcessor():
 	
 	def STEP_frequency_average(
 		self,
-		STEP_decay_and_filter: StepOutput
+		STEP_decay_and_filter: NumpyCache
 	) -> np.ndarray:
 		data = STEP_decay_and_filter.read()
 
@@ -339,7 +292,7 @@ class SongProcessor():
 	
 	def STEP_final(
 		self,
-		STEP_decay_and_filter: StepOutput,
+		STEP_decay_and_filter: NumpyCache,
 		edge_cutoff: int = 0.1,
 	) -> np.ndarray:
 		final_file = STEP_decay_and_filter
@@ -393,7 +346,7 @@ class SongProcessor():
 				for param in sig.parameters.values():
 					param_type = param.annotation if param.annotation is not inspect.Parameter.empty else None
 					value = param.default if param.default is not inspect.Parameter.empty else None
-					if param_type is StepOutput:
+					if param_type is NumpyCache:
 						if param.name in step_outputs:
 							value = step_outputs[param.name]
 						else:
@@ -412,7 +365,7 @@ class SongProcessor():
 				input_hash = hash_string(input_str)
 				filename = f"{func_name}_{input_hash}"
 				filename = os.path.join(self.out_dir, filename)
-				step_output = StepOutput(filename)
+				step_output = NumpyCache(filename)
 
 				if (not step_output.exists) or run_all:
 					self.print(f"Running: {func_name}{input_str}")

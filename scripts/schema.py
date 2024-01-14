@@ -251,7 +251,7 @@ def regenerate_schema():
 						element_type = prop["items"]["type"]
 						if REF_START in element_type:
 							element_type = element_type.replace(REF_START, "") 
-							code.line(f"this.{prop.name} = json.{prop.name}.map(d => new StemInfo(d));")
+							code.line(f"this.{prop.name} = json.{prop.name}.map(d => new {element_type}(d));")
 						else:
 							raise Exception("NOT IMPLEMENTED")
 					elif REF_START in prop.type:
@@ -264,7 +264,7 @@ def regenerate_schema():
 					code.line("this.valueSignal = createSignal(0);")
 		
 			# add a load() for everything
-			if object.name == "StemInfo":
+			if object.name == "StemInfo" or object.name == "PoseInfo":
 				code.line("")
 				with code.block("getDataProps(): NumpyData[] {", "}"):
 					with code.block("return [", "]"):

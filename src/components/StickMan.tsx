@@ -20,7 +20,7 @@ import {
 } from '@motion-canvas/core';
 import { CoolGradient } from '../utils/CoolGradient';
 
-import { NumpyData, StemInfo } from '../generated/DataClasses';
+import { NumpyData, PoseInfo, StemInfo } from '../generated/DataClasses';
 
 const RAW_POSE = [
 	157.175,
@@ -143,8 +143,6 @@ function calculateOffsetPoint(a: Vector2, b: Vector2, c: Vector2, distance: numb
 		is_straight = true;
 	}
 
-	console.log(a, b, c);
-
 	let o = new Vector2(b.x + 1, b.y); // a point that points toward radians origin from b
 
 	// Calculate the angle between ba and bc
@@ -171,6 +169,7 @@ function calculateOffsetPoint(a: Vector2, b: Vector2, c: Vector2, distance: numb
 export interface StickManProps extends NodeProps {
 	percent_through: SignalValue<number>;
 	size: SignalValue<Vector2>;
+	pose_info: SignalValue<PoseInfo>;
 }
 
 export class StickMan extends Node {
@@ -179,20 +178,19 @@ export class StickMan extends Node {
 	
 	@signal()
 	public declare readonly size: SimpleSignal<Vector2, this>;
+	
+	@signal()
+	public declare readonly pose_info: SimpleSignal<PoseInfo, this>;
 
-	private readonly container = createRef<Rect>();
-	private readonly path = createRef<Path>();
+	private readonly data = createSignal(() => {
+		var pose_info = this.pose_info();
+		var frame = pose_info.DATA_poseframes.frameSignal();
+		var posedata = pose_info.DATA_poseframes.data;
 
-	public constructor(props?: StickManProps) {
-		super({
-			...props,
-		});
-		// convert raw data to points
 		var points: Vector2[] = [];
-		for (var i = 0; i < RAW_POSE.length; i += 3) {
-			points.push(new Vector2(RAW_POSE[i], RAW_POSE[i + 1]));
+		for (var i = 0; i < posedata.shape[1]; i += 3) {
+			points.push(new Vector2(posedata.get(frame, i), posedata.get(frame, i + 1)));
 		}
-		console.log("start")
 		// var man_outline = [ 5, 5, 2, 9, 10, 11, 14, 13, 12 ];
 		var man_outline = [ 5, 1, 2, 3, 4, 4, 3, 2, 9, 10, 11, 11, 10, 9, 12, 13, 14, 14, 13, 12, 5, 6, 7, 7, 6 ];
 
@@ -208,23 +206,6 @@ export class StickMan extends Node {
 			return calculateOffsetPoint(points[man_outline[a]], points[man_outline[b]], points[man_outline[c]], 10);
 		});
 
-		console.log(outline_points2);
-		
-		// outline_points1[0].x += 10;
-
-		// draw points
-		var commands = [];
-		for (var i = 0; i < outline_points1.length; i++) {
-			var cmd = "L";
-			if (i == 0) {
-				cmd = "M";
-			}
-			var pt = outline_points1[i];
-			commands.push(`${cmd} ${pt.x},${pt.y}`);
-		}
-		commands.push("Z");
-		var d = commands.join(" ");
-
 		// draw points
 		var commands2 = [];
 		for (var i = 0; i < outline_points2.length; i++) {
@@ -236,7 +217,70 @@ export class StickMan extends Node {
 			commands2.push(`${cmd} ${pt.x},${pt.y}`);
 		}
 		commands2.push("Z");
-		var d2 = commands2.join(" ");
+		var d = commands2.join(" ");
+
+		return d;
+	});
+
+	private readonly container = createRef<Rect>();
+	private readonly path = createRef<Path>();
+
+	
+
+	public constructor(props?: StickManProps) {
+		super({
+			...props,
+		});
+		// convert raw data to points
+		// var points: Vector2[] = [];
+		// for (var i = 0; i < RAW_POSE.length; i += 3) {
+		// 	points.push(new Vector2(RAW_POSE[i], RAW_POSE[i + 1]));
+		// }
+		// console.log("start")
+		// // var man_outline = [ 5, 5, 2, 9, 10, 11, 14, 13, 12 ];
+		// var man_outline = [ 5, 1, 2, 3, 4, 4, 3, 2, 9, 10, 11, 11, 10, 9, 12, 13, 14, 14, 13, 12, 5, 6, 7, 7, 6 ];
+
+		// // var man_outline = [ 5, 5, 2, 2, 3, 3, 4, 4, 3, 3, 2, 2, 9, 9, 10, 0, 11, 1, 10, 0, 9, 9, 12, 2, 13, 3, 14, 4, 13, 3, 12, 2, 5, 5, 6, 6, 7, 7, 6, 6 ];
+
+		// // var man_outline = [ 5, 5, 2,2, 9, 9, 12, 12 ];
+
+		// var outline_points1 = man_outline.map(i => points[i]);
+		// var outline_points2 = man_outline.map((p_index, i) => {
+		// 	var a = i == 0 ? man_outline.length - 1 : i - 1;
+		// 	var b = i;
+		// 	var c = i == man_outline.length - 1 ? 0 : i + 1;
+		// 	return calculateOffsetPoint(points[man_outline[a]], points[man_outline[b]], points[man_outline[c]], 10);
+		// });
+
+		// console.log(outline_points2);
+		
+		// // outline_points1[0].x += 10;
+
+		// // draw points
+		// var commands = [];
+		// for (var i = 0; i < outline_points1.length; i++) {
+		// 	var cmd = "L";
+		// 	if (i == 0) {
+		// 		cmd = "M";
+		// 	}
+		// 	var pt = outline_points1[i];
+		// 	commands.push(`${cmd} ${pt.x},${pt.y}`);
+		// }
+		// commands.push("Z");
+		// var d = commands.join(" ");
+
+		// // draw points
+		// var commands2 = [];
+		// for (var i = 0; i < outline_points2.length; i++) {
+		// 	var cmd = "L";
+		// 	if (i == 0) {
+		// 		cmd = "M";
+		// 	}
+		// 	var pt = outline_points2[i];
+		// 	commands2.push(`${cmd} ${pt.x},${pt.y}`);
+		// }
+		// commands2.push("Z");
+		// var d2 = commands2.join(" ");
 
 		// var d = "M0,0 L100,100 L200,0 Z";
 
@@ -247,7 +291,7 @@ export class StickMan extends Node {
 					lineWidth={4}
 					ref={this.path}
 					fill={"#ff0000"}
-					data={d2}
+					data={this.data}
 				></Path>
 				{/* <Path
 					ref={this.path}

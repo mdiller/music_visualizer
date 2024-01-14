@@ -22,3 +22,5 @@ __pycache__/
 src/generated
 
 scripts/_spleeter/
+
+scripts/videos/

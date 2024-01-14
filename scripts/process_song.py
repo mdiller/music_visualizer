@@ -13,6 +13,7 @@ schema.regenerate_schema() # only regenerates if there are changes
 
 from data_classes import *
 from audio_processing import SongProcessor
+from process_poses import process_videos
 
 # TODO: implement a script to download the song and place it in the folder as full_song.mp3
 
@@ -34,7 +35,7 @@ song_info_file = os.path.join(SONG_DIR, "song_info.json")
 GENERATED_DIR = os.path.join(ROOT_DIR, "src/generated/")
 song_info_file2 = os.path.join(GENERATED_DIR, "song_info.json")
 mp3_link_stub_file = os.path.join(GENERATED_DIR, "song_mp3.js")
-
+VIDEOS_DIR = os.path.join(ROOT_DIR, "scripts", "videos")
 
 # STEP 1: SPLIT SONG INTO PARTS IF NOT ALREADY DONE
 
@@ -104,6 +105,7 @@ print("")
 
 song_info = SongInfo()
 
+song_info.poses = process_videos(SONG_DIR, VIDEOS_DIR, GENERATED_DIR)
 song_info.stems = stem_infos
 
 song_info.writeFile(song_info_file)
@@ -111,6 +113,8 @@ song_info.writeFile(song_info_file2)
 
 with open(mp3_link_stub_file, "w+") as f:
 	f.write(f"import audio from '../../songs/{song_name}/song.mp3'\nexport const MP3_FILE = audio;")
+
+print("processing poses...")
 
 print("done!")
 

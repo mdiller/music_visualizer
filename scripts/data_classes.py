@@ -1,4 +1,4 @@
-# VERSION_HASH: e3904a5e7c_beb6da1155
+# VERSION_HASH: 798f386f85_6f805f2174
 import json
 from collections import OrderedDict
 
@@ -141,12 +141,14 @@ class NumpyData():
 			f.write(text)
 
 class SongInfo():
-	def __init__(self, stems = None):
+	def __init__(self, stems = None, poses = None):
 		self.stems = stems
+		self.poses = poses
 
 	def toJson(self):
 		return OrderedDict([
 			("stems", list(map(lambda x: x if x is None else x.toJson(), self.stems))),
+			("poses", list(map(lambda x: x if x is None else x.toJson(), self.poses))),
 		])
 
 	def updateFromJson(self, json: OrderedDict):
@@ -155,6 +157,9 @@ class SongInfo():
 		if "stems" in json:
 			self.stems = list(map(lambda x: StemInfo.fromJson(x), json.get("stems")))
 			self.stems = json.get("stems")
+		if "poses" in json:
+			self.poses = list(map(lambda x: PoseInfo.fromJson(x), json.get("poses")))
+			self.poses = json.get("poses")
 
 	@classmethod
 	def fromJson(cls, json: OrderedDict):
@@ -166,6 +171,45 @@ class SongInfo():
 	def fromFile(cls, filename: str):
 		with open(filename, "r") as f:
 			return SongInfo.fromJson(json.loads(f.read()))
+
+	def writeFile(self, filename: str):
+		text = json.dumps(self.toJson(), indent="\t")
+		with open(filename, "w+") as f:
+			f.write(text)
+
+class PoseInfo():
+	def __init__(self, width = None, height = None, DATA_poseframes = None):
+		self.width = width
+		self.height = height
+		self.DATA_poseframes = DATA_poseframes
+
+	def toJson(self):
+		return OrderedDict([
+			("width", self.width),
+			("height", self.height),
+			("DATA_poseframes", self.DATA_poseframes if self.DATA_poseframes is None else self.DATA_poseframes.toJson()),
+		])
+
+	def updateFromJson(self, json: OrderedDict):
+		if json is None:
+			return
+		if "width" in json:
+			self.width = json.get("width")
+		if "height" in json:
+			self.height = json.get("height")
+		if "DATA_poseframes" in json:
+			self.DATA_poseframes = NumpyData.fromJson(json.get("DATA_poseframes"))
+
+	@classmethod
+	def fromJson(cls, json: OrderedDict):
+		self = PoseInfo()
+		self.updateFromJson(json)
+		return self
+
+	@classmethod
+	def fromFile(cls, filename: str):
+		with open(filename, "r") as f:
+			return PoseInfo.fromJson(json.loads(f.read()))
 
 	def writeFile(self, filename: str):
 		text = json.dumps(self.toJson(), indent="\t")

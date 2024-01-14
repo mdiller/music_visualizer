@@ -19,6 +19,9 @@ var numpy_datas: NumpyData[] = [];
 song_info.stems.forEach(stem => {
 	numpy_datas.push(...stem.getDataProps());
 });
+song_info.poses.forEach(pose => {
+	numpy_datas.push(...pose.getDataProps());
+});
 
 await Promise.all(numpy_datas.map(d => d.load()));
 
