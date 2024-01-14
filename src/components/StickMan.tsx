@@ -203,7 +203,7 @@ export class StickMan extends Node {
 			var a = i == 0 ? man_outline.length - 1 : i - 1;
 			var b = i;
 			var c = i == man_outline.length - 1 ? 0 : i + 1;
-			return calculateOffsetPoint(points[man_outline[a]], points[man_outline[b]], points[man_outline[c]], 10);
+			return calculateOffsetPoint(points[man_outline[a]], points[man_outline[b]], points[man_outline[c]], 20);
 		});
 
 		// draw points
@@ -293,12 +293,6 @@ export class StickMan extends Node {
 					fill={"#ff0000"}
 					data={this.data}
 				></Path>
-				{/* <Path
-					ref={this.path}
-					fill={"#00ff00"}
-					data={d}
-					opacity={0.5}
-				></Path> */}
 			</Rect>
 		);
 	}

@@ -124,7 +124,7 @@ export default makeScene2D(function* (view) {
         scale={[.5, .5]}
         percent_through={percent_through}
         pose_info={SONG_INFO.poses[0]}
-        position={[manSize.width / -2, manSize.height / -2]}
+        position={[manSize.width / -2, 0 - manSize.height]}
       />
     </Rect>
   );
