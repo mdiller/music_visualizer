@@ -112,6 +112,7 @@ export interface FreqHistogramProps extends NodeProps {
 	stem: SignalValue<StemInfo>;
 	gradient?: SignalValue<CoolGradient>;
 	size: SignalValue<Vector2>;
+	data_source?: SignalValue<NumpyData>;
 }
 
 export class FreqHistogram extends Node {
@@ -125,14 +126,23 @@ export class FreqHistogram extends Node {
 	@signal()
 	public declare readonly size: SimpleSignal<Vector2, this>;
 
+	@initial(null)
+	@signal()
+	public declare readonly data_source: SimpleSignal<NumpyData, this>;
+
 	private readonly container = createRef<Rect>();
 	private readonly path_blur = createRef<Path>();
 	private readonly path_line = createRef<Path>();
 	private readonly root_node = createRef<Node>();
+
+	private readonly data_source_actual = createSignal(() => {
+		var source = this.data_source();
+		return source != null ? source : this.stem().DATA_spectrogram_decayed
+	})
 	// TODO: make this into a "computed" method
-	private readonly data = createSignal(() => createPathData(this.stem(), this.stem().DATA_spectrogram, this.stem().DATA_spectrogram.frameSignal(), this.size().x, this.size().y));
-	private readonly dataDecayed = createSignal(() => createPathData(this.stem(), this.stem().DATA_spectrogram_decayed, this.stem().DATA_spectrogram_decayed.frameSignal(), this.size().x, this.size().y));
-	private readonly dataNoWrap = createSignal(() => createPathData(this.stem(), this.stem().DATA_spectrogram, this.stem().DATA_spectrogram.frameSignal(), this.size().x, this.size().y, true));
+	private readonly data = createSignal(() => createPathData(this.stem(), this.data_source_actual(), this.data_source_actual().frameSignal(), this.size().x, this.size().y));
+	// private readonly dataDecayed = createSignal(() => createPathData(this.stem(), this.data_source_actual(), this.data_source_actual().frameSignal(), this.size().x, this.size().y));
+	private readonly dataNoWrap = createSignal(() => createPathData(this.stem(), this.data_source_actual(), this.data_source_actual().frameSignal(), this.size().x, this.size().y, true));
 
 	public constructor(props?: FreqHistogramProps) {
 		super({
@@ -169,13 +179,13 @@ export class FreqHistogram extends Node {
 				<Path
 					opacity={back_opacity}
 					fill={() => this.gradient().toGradient(this.size().x, this.stem())}
-					data={() => this.dataDecayed()}
+					data={() => this.data()}
 				></Path>
 				<Path
 					opacity={0}
 					ref={this.path_blur}
 					fill={() => this.gradient().toGradient(this.size().x, this.stem())}
-					data={() => this.dataDecayed()}
+					data={() => this.data()}
 				></Path>
 			</Node>
 		);

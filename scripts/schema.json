@@ -56,6 +56,9 @@
 			},
 			"DATA_frequency_average": {
 				"type": "#/NumpyData"
+			},
+			"DATA_peak_adjusted_spectrogram": {
+				"type": "#/NumpyData"
 			}
 		}
 	},

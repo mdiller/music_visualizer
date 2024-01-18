@@ -8,6 +8,7 @@ import {
 	Txt,
 	Gradient,
 	Vector2LengthSignal,
+	Circle,
 } from '@motion-canvas/2d';
 import {
 	SignalValue,
@@ -165,6 +166,17 @@ function calculateOffsetPoint(a: Vector2, b: Vector2, c: Vector2, distance: numb
 	return new Vector2(d);
 }
 
+class FrameInfo {
+	body_d: string;
+	head_position: Vector2;
+	head_radius: number;
+
+	constructor() {
+		this.body_d = "";
+		this.head_position = new Vector2(0, 0);
+		this.head_radius = 1;
+	}
+}
 
 export interface StickManProps extends NodeProps {
 	percent_through: SignalValue<number>;
@@ -182,7 +194,7 @@ export class StickMan extends Node {
 	@signal()
 	public declare readonly pose_info: SimpleSignal<PoseInfo, this>;
 
-	private readonly data = createSignal(() => {
+	private readonly frameInfo: SimpleSignal<FrameInfo> = createSignal(() => {
 		var pose_info = this.pose_info();
 		var frame = pose_info.DATA_poseframes.frameSignal();
 		var posedata = pose_info.DATA_poseframes.data;
@@ -207,19 +219,43 @@ export class StickMan extends Node {
 		});
 
 		// draw points
-		var commands2 = [];
+		var commands = [];
 		for (var i = 0; i < outline_points2.length; i++) {
 			var cmd = "L";
 			if (i == 0) {
 				cmd = "M";
 			}
 			var pt = outline_points2[i];
-			commands2.push(`${cmd} ${pt.x},${pt.y}`);
+			commands.push(`${cmd} ${pt.x.toFixed(2)},${pt.y.toFixed(2)}`);
 		}
-		commands2.push("Z");
-		var d = commands2.join(" ");
+		commands.push("Z");
 
-		return d;
+		// draw head circle
+		const dx = points[1].x - points[0].x;
+		const dy = points[1].y - points[0].y;
+		const distance = Math.sqrt(dx * dx + dy * dy);
+		// const startX = points[0].x + radius;
+		// const startY = points[0].y;
+		// const endX = points[0].x - radius;
+		// const endY = points[0].y;
+
+		// commands.push(`M ${startX.toFixed(2)},${startY.toFixed(2)}`);
+		// commands.push(`A ${radius.toFixed(2)},${radius.toFixed(2)} 0 1 0 ${endX.toFixed(2)},${endY.toFixed(2)}`);
+		// commands.push(`A ${radius.toFixed(2)},${radius.toFixed(2)} 0 1 0 ${startX.toFixed(2)},${startY.toFixed(2)}`);
+
+		// console.log("hi")
+		// console.log(`M ${startX.toFixed(2)},${startY.toFixed(2)}`);
+		// console.log(`A ${radius.toFixed(2)},${radius.toFixed(2)} 0 1 0 ${endX.toFixed(2)},${endY.toFixed(2)}`);
+		// console.log(`A ${radius.toFixed(2)},${radius.toFixed(2)} 0 1 0 ${startX.toFixed(2)},${startY.toFixed(2)}`);
+
+		// console.log(`dx: ${dx}`, `dy: ${dy}`, `distance: ${distance}`, `radius: ${radius}`, `startX: ${startX}`, `startY: ${startY}`, `endX: ${endX}`, `endY: ${endY}`)
+
+		var frameInfo = new FrameInfo();
+		frameInfo.body_d = commands.join(" ")
+		frameInfo.head_position = points[0];
+		frameInfo.head_radius = distance * 0.75;
+
+		return frameInfo;
 	});
 
 	private readonly container = createRef<Rect>();
@@ -291,8 +327,18 @@ export class StickMan extends Node {
 					lineWidth={4}
 					ref={this.path}
 					fill={"#ff0000"}
-					data={this.data}
+					data={() => this.frameInfo().body_d}
 				></Path>
+				<Circle
+					stroke={"#000000"}
+					lineWidth={4}
+					fill={"#ff0000"}
+					position={() => this.frameInfo().head_position}
+					size={() => {
+						var thing = this.frameInfo().head_radius / 2;
+						return [thing, thing]
+					}}
+				></Circle>
 			</Rect>
 		);
 	}

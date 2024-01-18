@@ -84,6 +84,7 @@ export default makeScene2D(function* (view) {
         size={histSize}
         scale={[1, -1]}
         stem={STEMS.other} // other
+        data_source={STEMS.other.DATA_peak_adjusted_spectrogram}
         gradient={CoolGradient.fromColors(["#0e49be", "#ab08d2", "#0e49be"], true)}
         position={[0 - (canvas.width / 2),  0 - ((canvas.height / 2) - histSize.height)]} />
       {/* <FreqGradient
@@ -119,13 +120,13 @@ export default makeScene2D(function* (view) {
         stem={STEMS.bass} // base
         gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2")}
         position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} />
-      <StickMan
+      {/* <StickMan
         size={manSize}
         scale={[.5, .5]}
         percent_through={percent_through}
         pose_info={SONG_INFO.poses[0]}
         position={[manSize.width / -2, 0 - manSize.height]}
-      />
+      /> */}
     </Rect>
   );
 

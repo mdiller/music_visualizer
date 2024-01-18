@@ -25,7 +25,7 @@ from process_poses import process_videos
 
 overwrite_stems = False
 stems_model = "4stems" 
-song_name = "what_if"
+song_name = "im_insecure"
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 SPLEETER_DIR = os.path.join(ROOT_DIR, "scripts/_spleeter")

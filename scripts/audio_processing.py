@@ -1,3 +1,8 @@
+'''''
+PROMPT:
+
+[- Used So Far: 0.0277¢ | 219 tokens -]
+'''''
 import librosa
 import numpy as np
 import inspect
@@ -244,7 +249,7 @@ class SongProcessor():
 	def STEP_decay_and_filter(
 		self,
 		STEP_normalize: NumpyCache,
-		decay_factor: float = 0.8,
+		decay_factor: float = 0.80, # default/good value is 0.8
 		remove_negatives: bool = True,
 		fill_value_range: bool = True
 	) -> np.ndarray:
@@ -266,6 +271,75 @@ class SongProcessor():
 			data /= np.max(data)
 
 		return DataStub(data, "DATA_spectrogram_decayed", self.info.framerate)
+	
+	def STEP_super_decay(
+		self,
+		STEP_normalize: NumpyCache,
+	) -> np.ndarray:
+		data = STEP_normalize.read()
+		decay_factor = 0
+
+		if decay_factor > 0:
+			# Iterate through the frames (columns in C)
+			for i in range(1, data.shape[1]):
+				for j in range(data.shape[0]):
+					# Apply decay if the current value is lower than the decayed previous value
+					data[j, i] = max(data[j, i], data[j, i-1] * decay_factor)
+
+		data = data.T
+		
+		data = np.maximum(data, 0)
+		data /= np.max(data)
+		return data
+	
+	def rolling_average(self, data: np.ndarray, window_size: float) -> np.ndarray:
+		original_size = len(data)
+		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
+		pad_size = original_size - len(data)
+		if pad_size > 0:
+			last_value = data[-1]
+			data = np.pad(data, (0, pad_size), 'constant', constant_values=last_value)
+		return data
+
+	def rolling_average2d(self, data: np.ndarray, window_size: float) -> np.ndarray:
+		shape = (data.shape[0] - window_size + 1, window_size, data.shape[1])
+		strides = (data.strides[0], data.strides[0], data.strides[1])
+		sliding_windows = np.lib.stride_tricks.as_strided(data, shape=shape, strides=strides)
+		return sliding_windows.mean(axis=1)
+	
+	def apply_decay(self, data: np.ndarray, decay_factor: float) -> np.ndarray:
+		# Iterate through the rows (previously columns in C)
+		for i in range(1, data.shape[0]):
+			for j in range(data.shape[1]):
+				# Apply decay if the current value is lower than the decayed previous value
+				data[i, j] = max(data[i, j], data[i-1, j] * decay_factor)
+		return data
+		
+	def STEP_peak_adjusted_spectrogram(
+		self,
+		STEP_super_decay: NumpyCache,
+		STEP_decay_and_filter: NumpyCache
+	) -> np.ndarray:
+		super_data = STEP_super_decay.read()
+		data = STEP_decay_and_filter.read()
+
+		peak_data = np.amax(data, axis=1)
+
+		# peak_data = self.rolling_average(peak_data, 80)
+
+		peak_data = np.maximum(peak_data, 0.01)
+		peak_data = np.reciprocal(peak_data)
+
+		data *= peak_data[:, np.newaxis]
+
+		data = self.apply_decay(data, 0.7)
+
+		data = self.rolling_average2d(data, 10)
+
+		data = np.maximum(data, 0)
+		data /= np.max(data)
+		return DataStub(data, "DATA_peak_adjusted_spectrogram", self.info.framerate)
+
 	
 	
 	def STEP_frequency_average(
