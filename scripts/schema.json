@@ -102,7 +102,13 @@
 			"height": {
 				"type": "number"
 			},
-			"DATA_poseframes": {
+			"DATA_pose": {
+				"type": "#/NumpyData"
+			},
+			"DATA_hand_left": {
+				"type": "#/NumpyData"
+			},
+			"DATA_hand_right": {
 				"type": "#/NumpyData"
 			}
 		}

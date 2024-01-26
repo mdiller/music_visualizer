@@ -1,4 +1,4 @@
-# VERSION_HASH: 798f386f85_4fc84b59bd
+# VERSION_HASH: 798f386f85_e3f076f244
 import json
 from collections import OrderedDict
 
@@ -182,16 +182,20 @@ class SongInfo():
 			f.write(text)
 
 class PoseInfo():
-	def __init__(self, width = None, height = None, DATA_poseframes = None):
+	def __init__(self, width = None, height = None, DATA_pose = None, DATA_hand_left = None, DATA_hand_right = None):
 		self.width = width
 		self.height = height
-		self.DATA_poseframes = DATA_poseframes
+		self.DATA_pose = DATA_pose
+		self.DATA_hand_left = DATA_hand_left
+		self.DATA_hand_right = DATA_hand_right
 
 	def toJson(self):
 		return OrderedDict([
 			("width", self.width),
 			("height", self.height),
-			("DATA_poseframes", self.DATA_poseframes if self.DATA_poseframes is None else self.DATA_poseframes.toJson()),
+			("DATA_pose", self.DATA_pose if self.DATA_pose is None else self.DATA_pose.toJson()),
+			("DATA_hand_left", self.DATA_hand_left if self.DATA_hand_left is None else self.DATA_hand_left.toJson()),
+			("DATA_hand_right", self.DATA_hand_right if self.DATA_hand_right is None else self.DATA_hand_right.toJson()),
 		])
 
 	def updateFromJson(self, json: OrderedDict):
@@ -201,8 +205,12 @@ class PoseInfo():
 			self.width = json.get("width")
 		if "height" in json:
 			self.height = json.get("height")
-		if "DATA_poseframes" in json:
-			self.DATA_poseframes = NumpyData.fromJson(json.get("DATA_poseframes"))
+		if "DATA_pose" in json:
+			self.DATA_pose = NumpyData.fromJson(json.get("DATA_pose"))
+		if "DATA_hand_left" in json:
+			self.DATA_hand_left = NumpyData.fromJson(json.get("DATA_hand_left"))
+		if "DATA_hand_right" in json:
+			self.DATA_hand_right = NumpyData.fromJson(json.get("DATA_hand_right"))
 
 	@classmethod
 	def fromJson(cls, json: OrderedDict):

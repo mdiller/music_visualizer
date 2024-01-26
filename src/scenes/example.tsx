@@ -39,7 +39,7 @@ export default makeScene2D(function* (view) {
 
   const lineSize = new Vector2(canvas.width, 100);
 
-  const manSize = new Vector2(500, 500);
+  const manSize = new Vector2(1000, 1000);
 
 
   // #3b0c0f, 0b0c0f
@@ -120,13 +120,12 @@ export default makeScene2D(function* (view) {
         stem={STEMS.bass} // base
         gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2")}
         position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} />
-      {/* <StickMan
+      <StickMan
         size={manSize}
-        scale={[.5, .5]}
         percent_through={percent_through}
-        pose_info={SONG_INFO.poses[0]}
-        position={[manSize.width / -2, 0 - manSize.height]}
-      /> */}
+        pose_info={SONG_INFO.poses[2]}
+        position={[(canvas.width / -2) + (manSize.width / 2), 0]}
+      />
     </Rect>
   );
 
@@ -147,7 +146,19 @@ export default makeScene2D(function* (view) {
   var generators: ThreadGenerator[] = [];
 
   function *dataGenerator(data: NumpyData): ThreadGenerator {
-    for (var i = 0; i < data.data.shape[0]; i++) {
+    var start_index = 0;
+    var offset_sec = data.offset; // seconds to offset the data by. negative means starts before song, positive means starts after
+    if (offset_sec > 0) {
+      yield* waitFor(offset_sec);
+    }
+    if (offset_sec < 0) {
+      var frames_skipped = (0 - offset_sec) * data.framerate;
+      start_index = Math.floor(frames_skipped) + 1;
+      var time_til_next_frame = (start_index - frames_skipped) / data.framerate;
+      yield* waitFor(time_til_next_frame);
+    }
+
+    for (var i = start_index; i < data.data.shape[0]; i++) {
       data.frameSignal(i);
       if (i < data.data.shape[0] - 1) {
         yield tween(1.0 / data.framerate, value => {
