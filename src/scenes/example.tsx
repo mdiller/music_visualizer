@@ -107,23 +107,23 @@ export default makeScene2D(function* (view) {
       <FreqHistogram
         size={vocalHistSize}
         stem={STEMS.vocals} // vocal_top
-        gradient={CoolGradient.fromScale("#0e1ebe", "#0e49be", "#0e76be")}
+        gradient={CoolGradient.fromScale("#0e1ebe", "#0e49be", "#0e76be", SONG_INFO.key)}
         position={[vocalHistSize.x / -2, 0 - vocalHistSize.y]} />
       <FreqHistogram
         size={vocalHistSize}
         scale={[1, -1]}
         stem={STEMS.vocals} // vocal_bottom
-        gradient={CoolGradient.fromScale("#0e1ebe", "#0e49be", "#0e76be")}
+        gradient={CoolGradient.fromScale("#0e1ebe", "#0e49be", "#0e76be", SONG_INFO.key)}
         position={[vocalHistSize.x / -2, vocalHistSize.y]} />
       <FreqHistogram
         size={histSize}
         stem={STEMS.bass} // base
-        gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2")}
+        gradient={CoolGradient.fromScale("#4708d2", "#7f08d2", "#ab08d2", SONG_INFO.key)}
         position={[0 - (canvas.width / 2), (canvas.height / 2) - histSize.height]} />
       <StickMan
         size={manSize}
         percent_through={percent_through}
-        pose_info={SONG_INFO.poses[2]}
+        pose_info={SONG_INFO.poses[0]}
         position={[(canvas.width / -2) + (manSize.width / 2), 0]}
       />
     </Rect>

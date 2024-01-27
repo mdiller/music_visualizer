@@ -27,12 +27,6 @@
 			"max_x": {
 				"type": "number"
 			},
-			"bpm": {
-				"type": "number"
-			},
-			"bpm_offset": {
-				"type": "number"
-			},
 			"DATA_spectrogram": {
 				"type": "#/NumpyData"
 			},
@@ -79,6 +73,27 @@
 	{
 		"title": "SongInfo",
 		"properties": {
+			"name": {
+				"type": "string"
+			},
+			"samplerate": {
+				"type": "number"
+			},
+			"duration": {
+				"type": "number"
+			},
+			"bpm": {
+				"type": "number"
+			},
+			"bpm_offset": {
+				"type": "number"
+			},
+			"key": {
+				"type": "string"
+			},
+			"DATA_beat_timing": {
+				"type": "#/NumpyData"
+			},
 			"stems": {
 				"type": "array",
 				"items": {
@@ -102,13 +117,10 @@
 			"height": {
 				"type": "number"
 			},
+			"framerate": {
+				"type": "number"
+			},
 			"DATA_pose": {
-				"type": "#/NumpyData"
-			},
-			"DATA_hand_left": {
-				"type": "#/NumpyData"
-			},
-			"DATA_hand_right": {
 				"type": "#/NumpyData"
 			}
 		}

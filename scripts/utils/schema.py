@@ -6,15 +6,13 @@ import os
 
 THIS_FILE = __file__
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-SCHEMA_FILE = os.path.join(THIS_DIR, "schema.json")
+SCHEMA_FILE = os.path.join(THIS_DIR, "..", "schema.json")
 OUTPUT_PYTHON = os.path.join(THIS_DIR, "data_classes.py")
-OUTPUT_TYPESCRIPT = os.path.join(THIS_DIR, "../src/generated/DataClasses.ts")
+OUTPUT_TYPESCRIPT = os.path.join(THIS_DIR, "../../src/generated/DataClasses.ts")
 
 REF_START = "#/"
 
 def regenerate_schema():
-	print(THIS_FILE)
-
 	def hash_file(filename: str):
 		with open(filename, "r") as f:
 			return hashlib.sha256(f.read().encode()).hexdigest()[:10]
@@ -145,7 +143,10 @@ def regenerate_schema():
 		with code.block(f"class {object.name}():"):
 			args = []
 			for prop in props:
-				args.append(f"{prop.name} = None")
+				defaultvalue = "None"
+				if prop.type == "array":
+					defaultvalue = "[]"
+				args.append(f"{prop.name} = {defaultvalue}")
 			with code.block(f"def __init__(self, {', '.join(args)}):"):
 				for prop in props:
 					code.line(f"self.{prop.name} = {prop.name}")

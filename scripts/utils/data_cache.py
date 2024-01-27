@@ -4,7 +4,7 @@ import hashlib
 from collections import OrderedDict
 import json
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".."))
 
 def hash_string(input: str):
 	return hashlib.sha256(input.encode()).hexdigest()[:10]
@@ -31,7 +31,7 @@ class NumpyCache():
 	@property
 	def hash(self):
 		if not self._hash:
-			self._hash = hash_string(self.filepath)
+			self._hash = hash_string(os.path.basename(self.filepath))
 		return self._hash
 
 	def save(self, data: np.ndarray, info: OrderedDict):

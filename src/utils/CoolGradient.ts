@@ -26,7 +26,7 @@ export class CoolGradient {
 		}), isOctave);
 	}
 
-	static fromScale(rootColor: string, onScaleColor: string, offScaleColor: string): CoolGradient {
+	static fromScale(rootColor: string, onScaleColor: string, offScaleColor: string, key: string): CoolGradient {
 		let noteThickness: number = 0.5;
 
 		// VERIFY that this adds up to 12 mebb?
@@ -34,8 +34,19 @@ export class CoolGradient {
 		let minorScaleSteps: number[] = [1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1];
 
 		// F Major
-		let scaleSteps: number[] = majorScaleSteps;
-		let keyRootOffset: number = 5; // how many half-steps up from A is the root of the key (F (dls) => 8) (D (whatif) => 5) (Eb (heartburn) => 6)
+		let splitkey = key.split(" ");
+		let key_note = splitkey[0];
+		let key_type = splitkey[1];
+
+		let key_notes =["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"]
+
+
+		let scaleSteps: number[] = key_type == "major" ? majorScaleSteps : minorScaleSteps;
+		let keyRootOffset: number = key_notes.indexOf(key_note); // how many half-steps up from A is the root of the key (F (dls) => 8) (D (whatif) => 5) (Eb (heartburn) => 6)
+
+		if (keyRootOffset == -1) {
+			console.error(`cant correctly parse key: ${key}`)
+		}
 
 		let stepsPerOctave: number = scaleSteps.length; // should be 12
 

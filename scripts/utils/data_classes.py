@@ -1,9 +1,9 @@
-# VERSION_HASH: 798f386f85_e3f076f244
+# VERSION_HASH: 13e2eee779_ae9b690504
 import json
 from collections import OrderedDict
 
 class StemInfo():
-	def __init__(self, name = None, samplerate = None, frame_count = None, framerate = None, octaves = None, bins_per_octave = None, min_x = None, max_x = None, bpm = None, bpm_offset = None, DATA_spectrogram = None, DATA_volume = None, DATA_volume_velocity = None, DATA_volume_rolling_average = None, DATA_spectrogram_held_notes = None, DATA_spectrogram_decayed = None, DATA_volume_detailed_average = None, DATA_frequency_average = None, DATA_peak_adjusted_spectrogram = None):
+	def __init__(self, name = None, samplerate = None, frame_count = None, framerate = None, octaves = None, bins_per_octave = None, min_x = None, max_x = None, DATA_spectrogram = None, DATA_volume = None, DATA_volume_velocity = None, DATA_volume_rolling_average = None, DATA_spectrogram_held_notes = None, DATA_spectrogram_decayed = None, DATA_volume_detailed_average = None, DATA_frequency_average = None, DATA_peak_adjusted_spectrogram = None):
 		self.name = name
 		self.samplerate = samplerate
 		self.frame_count = frame_count
@@ -12,8 +12,6 @@ class StemInfo():
 		self.bins_per_octave = bins_per_octave
 		self.min_x = min_x
 		self.max_x = max_x
-		self.bpm = bpm
-		self.bpm_offset = bpm_offset
 		self.DATA_spectrogram = DATA_spectrogram
 		self.DATA_volume = DATA_volume
 		self.DATA_volume_velocity = DATA_volume_velocity
@@ -34,8 +32,6 @@ class StemInfo():
 			("bins_per_octave", self.bins_per_octave),
 			("min_x", self.min_x),
 			("max_x", self.max_x),
-			("bpm", self.bpm),
-			("bpm_offset", self.bpm_offset),
 			("DATA_spectrogram", self.DATA_spectrogram if self.DATA_spectrogram is None else self.DATA_spectrogram.toJson()),
 			("DATA_volume", self.DATA_volume if self.DATA_volume is None else self.DATA_volume.toJson()),
 			("DATA_volume_velocity", self.DATA_volume_velocity if self.DATA_volume_velocity is None else self.DATA_volume_velocity.toJson()),
@@ -66,10 +62,6 @@ class StemInfo():
 			self.min_x = json.get("min_x")
 		if "max_x" in json:
 			self.max_x = json.get("max_x")
-		if "bpm" in json:
-			self.bpm = json.get("bpm")
-		if "bpm_offset" in json:
-			self.bpm_offset = json.get("bpm_offset")
 		if "DATA_spectrogram" in json:
 			self.DATA_spectrogram = NumpyData.fromJson(json.get("DATA_spectrogram"))
 		if "DATA_volume" in json:
@@ -145,12 +137,26 @@ class NumpyData():
 			f.write(text)
 
 class SongInfo():
-	def __init__(self, stems = None, poses = None):
+	def __init__(self, name = None, samplerate = None, duration = None, bpm = None, bpm_offset = None, key = None, DATA_beat_timing = None, stems = [], poses = []):
+		self.name = name
+		self.samplerate = samplerate
+		self.duration = duration
+		self.bpm = bpm
+		self.bpm_offset = bpm_offset
+		self.key = key
+		self.DATA_beat_timing = DATA_beat_timing
 		self.stems = stems
 		self.poses = poses
 
 	def toJson(self):
 		return OrderedDict([
+			("name", self.name),
+			("samplerate", self.samplerate),
+			("duration", self.duration),
+			("bpm", self.bpm),
+			("bpm_offset", self.bpm_offset),
+			("key", self.key),
+			("DATA_beat_timing", self.DATA_beat_timing if self.DATA_beat_timing is None else self.DATA_beat_timing.toJson()),
 			("stems", list(map(lambda x: x if x is None else x.toJson(), self.stems))),
 			("poses", list(map(lambda x: x if x is None else x.toJson(), self.poses))),
 		])
@@ -158,6 +164,20 @@ class SongInfo():
 	def updateFromJson(self, json: OrderedDict):
 		if json is None:
 			return
+		if "name" in json:
+			self.name = json.get("name")
+		if "samplerate" in json:
+			self.samplerate = json.get("samplerate")
+		if "duration" in json:
+			self.duration = json.get("duration")
+		if "bpm" in json:
+			self.bpm = json.get("bpm")
+		if "bpm_offset" in json:
+			self.bpm_offset = json.get("bpm_offset")
+		if "key" in json:
+			self.key = json.get("key")
+		if "DATA_beat_timing" in json:
+			self.DATA_beat_timing = NumpyData.fromJson(json.get("DATA_beat_timing"))
 		if "stems" in json:
 			self.stems = list(map(lambda x: StemInfo.fromJson(x), json.get("stems")))
 			self.stems = json.get("stems")
@@ -182,20 +202,18 @@ class SongInfo():
 			f.write(text)
 
 class PoseInfo():
-	def __init__(self, width = None, height = None, DATA_pose = None, DATA_hand_left = None, DATA_hand_right = None):
+	def __init__(self, width = None, height = None, framerate = None, DATA_pose = None):
 		self.width = width
 		self.height = height
+		self.framerate = framerate
 		self.DATA_pose = DATA_pose
-		self.DATA_hand_left = DATA_hand_left
-		self.DATA_hand_right = DATA_hand_right
 
 	def toJson(self):
 		return OrderedDict([
 			("width", self.width),
 			("height", self.height),
+			("framerate", self.framerate),
 			("DATA_pose", self.DATA_pose if self.DATA_pose is None else self.DATA_pose.toJson()),
-			("DATA_hand_left", self.DATA_hand_left if self.DATA_hand_left is None else self.DATA_hand_left.toJson()),
-			("DATA_hand_right", self.DATA_hand_right if self.DATA_hand_right is None else self.DATA_hand_right.toJson()),
 		])
 
 	def updateFromJson(self, json: OrderedDict):
@@ -205,12 +223,10 @@ class PoseInfo():
 			self.width = json.get("width")
 		if "height" in json:
 			self.height = json.get("height")
+		if "framerate" in json:
+			self.framerate = json.get("framerate")
 		if "DATA_pose" in json:
 			self.DATA_pose = NumpyData.fromJson(json.get("DATA_pose"))
-		if "DATA_hand_left" in json:
-			self.DATA_hand_left = NumpyData.fromJson(json.get("DATA_hand_left"))
-		if "DATA_hand_right" in json:
-			self.DATA_hand_right = NumpyData.fromJson(json.get("DATA_hand_right"))
 
 	@classmethod
 	def fromJson(cls, json: OrderedDict):

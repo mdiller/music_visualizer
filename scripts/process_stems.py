@@ -1,7 +1,7 @@
 '''''
 PROMPT:
 
-[- Used So Far: 0.0277¢ | 219 tokens -]
+[- Used So Far: 0.06319999999999999¢ | 471 tokens -]
 '''''
 import librosa
 import numpy as np
@@ -11,35 +11,26 @@ import hashlib
 import os
 from collections import OrderedDict
 import json
-from data_cache import NumpyCache, hash_string
+from utils.data_cache import NumpyCache, hash_string
 
 import matplotlib
+
+import utils.numpytools as numpytools
+from utils.smart_stepper import DataStub, SmartStepper
 matplotlib.use('Agg')
 
-from data_classes import NumpyData, StemInfo
-
+from utils.data_classes import NumpyData, SongInfo, StemInfo
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 
-
-class DataStub():
-	def __init__(self, data: np.ndarray, key: str, framerate: float, offset: float = 0):
-		self.data = data
-		self.key = key
-		self.framerate = framerate
-		self.offset = offset
-
-class SongProcessor():
+class StemProcesser(SmartStepper):
 	info: StemInfo
-	def __init__(self, name, filename, out_dir):
-		self.name = name
+	def __init__(self, stem_name: str, filename: str, song_info: SongInfo):
+		self.song_info = song_info
+		song_dir = os.path.join(ROOT_DIR, "data", "songs", song_info.name)
+		super().__init__(f"Stem - {stem_name}", os.path.join(song_dir, "data", stem_name), StemInfo)
+		self.name = stem_name
 		self.filename = filename
-		self.out_dir = out_dir
-		self.info_file = os.path.join(out_dir, "info.json")
-		self.info = None
-		self.print_lines = []
-		if not os.path.exists(self.out_dir):
-			os.makedirs(self.out_dir)
 		
 	def STEP_extract_audio(
 		self,
@@ -72,7 +63,7 @@ class SongProcessor():
 		STEP_extract_audio: NumpyCache,
 		overlap: int = 2,
 	):
-		bpm = 67 # TODO: calculate this later
+		bpm = self.song_info.bpm
 		volume_framerate: float = 2 * bpm / 60
 		data = STEP_extract_audio.read()
 
@@ -86,7 +77,7 @@ class SongProcessor():
 		# Compute short-term Fourier transform
 		stft = librosa.stft(data, n_fft=frame_length, hop_length=hop_length)
 
-		# Calculate power spectrum
+		# Calculate  power spectrum
 		powerSpectrum = np.abs(stft)**2
 
 		# Compute RMS energy for each frame
@@ -98,7 +89,7 @@ class SongProcessor():
 		data = np.maximum(data, 0)
 		data /= np.max(data)
 
-		return DataStub(data, "DATA_volume", volume_framerate)
+		return DataStub(data, volume_framerate)
 	
 	def STEP_volume_velocity(
 		self,
@@ -109,13 +100,12 @@ class SongProcessor():
 		modifier = 1
 		data = np.diff(data) / modifier
 
-		return DataStub(data, "DATA_volume_velocity", self.info.DATA_volume.framerate)
+		return DataStub(data, self.info.DATA_volume.framerate)
 	
 	def STEP_volume_detailed_average(
 		self,
 		STEP_extract_audio: NumpyCache,
 	):
-		bpm = 67 # TODO: calculate this later
 		overlap = 2
 		window_size = 10
 
@@ -136,7 +126,7 @@ class SongProcessor():
 		data = np.maximum(data, 0)
 		data /= np.max(data)
 
-		return DataStub(data, "DATA_volume_detailed_average", volume_framerate)
+		return DataStub(data, volume_framerate)
 	
 	def STEP_volume_rolling_average(
 		self,
@@ -149,7 +139,7 @@ class SongProcessor():
 		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
 		data /= np.max(data)
 
-		return DataStub(data, "DATA_volume_rolling_average", self.info.DATA_volume.framerate)
+		return DataStub(data, self.info.DATA_volume.framerate)
 
 	
 	def STEP_raw_spectrogram(
@@ -188,7 +178,7 @@ class SongProcessor():
 		STEP_raw_spectrogram: NumpyCache,
 		amplitude_ref: float = 0.6
 	) -> np.ndarray:
-		data = STEP_raw_spectrogram.read()
+		data = STEP_raw_spectrogram.read() 
 
 		data = librosa.amplitude_to_db(np.abs(data), ref=amplitude_ref)
 		data = librosa.util.normalize(data)
@@ -230,9 +220,9 @@ class SongProcessor():
 		result = np.maximum(result, 0)
 		result /= np.max(result)
 
-		return DataStub(result, "DATA_spectrogram_held_notes", self.info.framerate)
+		return DataStub(result, self.info.framerate)
 
-	def STEP_spectro_clean(
+	def STEP_spectrogram(
 		self,
 		STEP_normalize: NumpyCache,
 	) -> np.array:
@@ -243,10 +233,10 @@ class SongProcessor():
 		data = np.maximum(data, 0)
 		data /= np.max(data)
 
-		return DataStub(data, "DATA_spectrogram", self.info.framerate)
+		return DataStub(data, self.info.framerate)
 
 	
-	def STEP_decay_and_filter(
+	def STEP_spectrogram_decayed(
 		self,
 		STEP_normalize: NumpyCache,
 		decay_factor: float = 0.80, # default/good value is 0.8
@@ -270,7 +260,7 @@ class SongProcessor():
 		if fill_value_range:
 			data /= np.max(data)
 
-		return DataStub(data, "DATA_spectrogram_decayed", self.info.framerate)
+		return DataStub(data, self.info.framerate)
 	
 	def STEP_super_decay(
 		self,
@@ -280,7 +270,7 @@ class SongProcessor():
 		decay_factor = 0
 
 		if decay_factor > 0:
-			# Iterate through the frames (columns in C)
+			# Iterate   through the frames (columns in C)
 			for i in range(1, data.shape[1]):
 				for j in range(data.shape[0]):
 					# Apply decay if the current value is lower than the decayed previous value
@@ -291,37 +281,14 @@ class SongProcessor():
 		data = np.maximum(data, 0)
 		data /= np.max(data)
 		return data
-	
-	def rolling_average(self, data: np.ndarray, window_size: float) -> np.ndarray:
-		original_size = len(data)
-		data = np.convolve(data, np.ones(window_size), 'valid') / window_size
-		pad_size = original_size - len(data)
-		if pad_size > 0:
-			last_value = data[-1]
-			data = np.pad(data, (0, pad_size), 'constant', constant_values=last_value)
-		return data
-
-	def rolling_average2d(self, data: np.ndarray, window_size: float) -> np.ndarray:
-		shape = (data.shape[0] - window_size + 1, window_size, data.shape[1])
-		strides = (data.strides[0], data.strides[0], data.strides[1])
-		sliding_windows = np.lib.stride_tricks.as_strided(data, shape=shape, strides=strides)
-		return sliding_windows.mean(axis=1)
-	
-	def apply_decay(self, data: np.ndarray, decay_factor: float) -> np.ndarray:
-		# Iterate through the rows (previously columns in C)
-		for i in range(1, data.shape[0]):
-			for j in range(data.shape[1]):
-				# Apply decay if the current value is lower than the decayed previous value
-				data[i, j] = max(data[i, j], data[i-1, j] * decay_factor)
-		return data
 		
 	def STEP_peak_adjusted_spectrogram(
 		self,
 		STEP_super_decay: NumpyCache,
-		STEP_decay_and_filter: NumpyCache
+		STEP_spectrogram_decayed: NumpyCache
 	) -> np.ndarray:
 		super_data = STEP_super_decay.read()
-		data = STEP_decay_and_filter.read()
+		data = STEP_spectrogram_decayed.read()
 
 		peak_data = np.amax(data, axis=1)
 
@@ -332,21 +299,21 @@ class SongProcessor():
 
 		data *= peak_data[:, np.newaxis]
 
-		data = self.apply_decay(data, 0.7)
+		data = numpytools.apply_decay(data, 0.7)
 
-		data = self.rolling_average2d(data, 10)
+		data = numpytools.rolling_average2d(data, 10)
 
 		data = np.maximum(data, 0)
 		data /= np.max(data)
-		return DataStub(data, "DATA_peak_adjusted_spectrogram", self.info.framerate)
+		return DataStub(data, self.info.framerate)
 
 	
 	
 	def STEP_frequency_average(
 		self,
-		STEP_decay_and_filter: NumpyCache
+		STEP_spectrogram_decayed: NumpyCache
 	) -> np.ndarray:
-		data = STEP_decay_and_filter.read()
+		data = STEP_spectrogram_decayed.read()
 
 		frequencies = np.zeros(data.shape[0])
 		# Create an array of frequency indices (assuming they start from 0 and go up by 1)
@@ -362,14 +329,14 @@ class SongProcessor():
 		
 		frequencies /= data.shape[1]
 
-		return DataStub(frequencies, "DATA_frequency_average", self.info.framerate)
+		return DataStub(frequencies, self.info.framerate)
 	
 	def STEP_final(
 		self,
-		STEP_decay_and_filter: NumpyCache,
+		STEP_spectrogram_decayed: NumpyCache,
 		edge_cutoff: int = 0.1,
 	) -> np.ndarray:
-		final_file = STEP_decay_and_filter
+		final_file = STEP_spectrogram_decayed
 		data = final_file.read() # test1
 
 		lower_bounds = []
@@ -387,111 +354,3 @@ class SongProcessor():
 
 		self.info.min_x = int(np.min(lower_bounds))
 		self.info.max_x = int(np.max(upper_bounds))
-
-	def print(self, text):
-		self.print_lines.append(text)
-		if self.direct_print:
-			print(text)
-
-	def run(self, direct_print = False):
-		self.direct_print = direct_print
-		run_all = False
-		self.info = StemInfo()
-		
-		if run_all:
-			self.print("Running all...")
-		
-		# get func list dir
-		unresolved_steps = OrderedDict({})
-		step_outputs = OrderedDict({})
-		for func_name, func in inspect.getmembers(self, predicate=inspect.ismethod):
-			if func_name.startswith("STEP_"):
-				unresolved_steps[func_name] = func
-
-		stuff_done = True
-		while stuff_done:
-			stuff_done = False
-			func_names = list(unresolved_steps.keys())
-			for func_name in func_names:
-				func = unresolved_steps[func_name]
-				sig = inspect.signature(func)
-				arg_values = OrderedDict({})
-				can_run = True
-				for param in sig.parameters.values():
-					param_type = param.annotation if param.annotation is not inspect.Parameter.empty else None
-					value = param.default if param.default is not inspect.Parameter.empty else None
-					if param_type is NumpyCache:
-						if param.name in step_outputs:
-							value = step_outputs[param.name]
-						else:
-							can_run = False
-							break # skip this if we dont have the input for it yet
-					
-					if value is None:
-						self.print(f"ERROR: missing default value for {func_name}.{param.name}")
-						raise Exception("ahhhh missing default value!")
-					arg_values[param.name] = value
-				if not can_run:
-					continue
-
-				input_str = "_".join(map(lambda arg: str(arg), arg_values.items()))
-				input_str = f"[{hash_string(inspect.getsource(func))}]: {input_str}"
-				input_hash = hash_string(input_str)
-				filename = f"{func_name}_{input_hash}"
-				filename = os.path.join(self.out_dir, filename)
-				step_output = NumpyCache(filename)
-
-				if (not step_output.exists) or run_all:
-					self.print(f"Running: {func_name}{input_str}")
-					json_before = self.info.toJson()
-					result = func(**{k: v for k, v in arg_values.items() if v is not inspect.Parameter.empty})
-					
-					if isinstance(result, DataStub):
-						result: DataStub
-						# VERIFY KEY HERE
-						# CREATE NEW CLASS HERE
-						if not hasattr(StemInfo(), result.key):
-							raise Exception(f"MISSING KEY '{result.key}' IN StemInfo")
-						
-						data_thing = NumpyData()
-						data_thing.filename = os.path.relpath(os.path.abspath(step_output.filepath_npy), ROOT_DIR)
-						data_thing.framerate = result.framerate
-						data_thing.offset = result.offset
-						setattr(self.info, result.key, data_thing)
-
-						result = result.data
-						
-					info_json = self.info.toJson()
-					
-					duplicate_keys = []
-					for key in info_json:
-						if json_before.get(key) == info_json.get(key):
-							duplicate_keys.append(key)
-					for key in duplicate_keys:
-						del info_json[key]
-
-					step_output.save(result, info_json)
-				else:
-					self.print(f"Verified: {func_name}.{input_hash}")
-					info_json = step_output.read_info()
-					self.info.updateFromJson(info_json)
-
-				# apply our info changes if there were any
-
-				step_outputs[func_name] = step_output
-				
-				del unresolved_steps[func_name]
-				stuff_done = True
-		
-		if unresolved_steps:
-			self.print(f"ERROR: UNRESOLVED FUNCS AFTER RUNNING")
-			raise Exception("ahhhh unresolved funcs")
-		
-		self.info.writeFile(self.info_file)
-
-		if not direct_print:
-			print(self.name)
-			for line in self.print_lines:
-				print(line)
-		# output_type = get_type_hints(func).get('return')
-		# is_ndarray = output_type is np.ndarray
